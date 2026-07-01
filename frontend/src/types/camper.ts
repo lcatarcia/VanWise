@@ -32,6 +32,18 @@ export interface CreateCamperRequest {
   tags: string[]
 }
 
+export interface UpdateCamperRequest extends CreateCamperRequest {}
+
+export interface CamperDetail extends CamperSummary {
+  transmission: string
+  engine: string
+  chassis: string
+  sleepingPlaces: number | null
+  notes: string
+  sourceUrl: string
+  tags: string[]
+}
+
 export interface DistributionPoint {
   label: string
   value: number

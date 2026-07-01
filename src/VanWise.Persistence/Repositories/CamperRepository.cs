@@ -160,29 +160,41 @@ public sealed class CamperRepository(VanWiseDbContext dbContext) : ICamperReposi
 
     private async Task<IReadOnlyCollection<DistributionPointDto>> GetBrandDistribution(CancellationToken cancellationToken)
     {
-        return await dbContext.Campers
+        var points = await dbContext.Campers
             .AsNoTracking()
             .GroupBy(camper => camper.Brand)
-            .Select(group => new DistributionPointDto(group.Key, group.Count()))
+            .Select(group => new { Label = group.Key, Value = group.Count() })
             .OrderByDescending(point => point.Value)
             .ToListAsync(cancellationToken);
+
+        return points
+            .Select(point => new DistributionPointDto(point.Label, point.Value))
+            .ToList();
     }
 
     private async Task<IReadOnlyCollection<DistributionPointDto>> GetPriceDistribution(CancellationToken cancellationToken)
     {
-        return await dbContext.Campers
+        var points = await dbContext.Campers
             .AsNoTracking()
             .GroupBy(camper => camper.AskingPrice == null ? "Non indicato" : camper.AskingPrice < 50000 ? "< 50k" : camper.AskingPrice < 80000 ? "50k-80k" : "> 80k")
-            .Select(group => new DistributionPointDto(group.Key, group.Count()))
+            .Select(group => new { Label = group.Key, Value = group.Count() })
             .ToListAsync(cancellationToken);
+
+        return points
+            .Select(point => new DistributionPointDto(point.Label, point.Value))
+            .ToList();
     }
 
     private async Task<IReadOnlyCollection<DistributionPointDto>> GetLengthDistribution(CancellationToken cancellationToken)
     {
-        return await dbContext.Campers
+        var points = await dbContext.Campers
             .AsNoTracking()
             .GroupBy(camper => camper.LengthMeters == null ? "Non indicato" : camper.LengthMeters < 6 ? "< 6m" : camper.LengthMeters < 7.5m ? "6m-7.5m" : "> 7.5m")
-            .Select(group => new DistributionPointDto(group.Key, group.Count()))
+            .Select(group => new { Label = group.Key, Value = group.Count() })
             .ToListAsync(cancellationToken);
+
+        return points
+            .Select(point => new DistributionPointDto(point.Label, point.Value))
+            .ToList();
     }
 }

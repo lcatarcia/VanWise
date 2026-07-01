@@ -1,5 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import AddBoxOutlinedIcon from '@mui/icons-material/AddBoxOutlined'
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined'
 import {
   Alert,
   Box,
@@ -24,9 +25,9 @@ import { createColumnHelper, flexRender, getCoreRowModel, useReactTable } from '
 import { useState, type KeyboardEvent } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { z } from 'zod'
-import { createCamper, getCampers } from '../api/campers'
+import { createCamper, getCamper, getCampers, updateCamper } from '../api/campers'
 import { TrendIcon } from '../components/TrendIcon'
-import type { CreateCamperRequest } from '../types/camper'
+import type { CamperDetail, CreateCamperRequest } from '../types/camper'
 import type { CamperSummary } from '../types/camper'
 
 const columnHelper = createColumnHelper<CamperSummary>()
@@ -111,23 +112,52 @@ const defaultValues: CamperFormValues = {
   isFavorite: false,
 }
 
+function toFormValues(camper: CamperDetail): CamperFormValues {
+  return {
+    brand: camper.brand,
+    model: camper.model,
+    year: camper.year,
+    askingPrice: camper.askingPrice,
+    mileageKm: camper.mileageKm,
+    lengthMeters: camper.lengthMeters,
+    transmission: camper.transmission,
+    engine: camper.engine,
+    chassis: camper.chassis,
+    sleepingPlaces: camper.sleepingPlaces,
+    region: camper.region,
+    city: camper.city,
+    notes: camper.notes,
+    sourceUrl: camper.sourceUrl,
+    isFavorite: camper.isFavorite,
+  }
+}
+
 export function CampersPage() {
   const queryClient = useQueryClient()
   const [tagInput, setTagInput] = useState('')
   const [tags, setTags] = useState<string[]>([])
+  const [editingCamperId, setEditingCamperId] = useState<string | null>(null)
+  const [loadingCamperId, setLoadingCamperId] = useState<string | null>(null)
+  const [loadError, setLoadError] = useState(false)
   const { data = [] } = useQuery({ queryKey: ['campers'], queryFn: getCampers, retry: false })
   const form = useForm<CamperFormValues>({ resolver: zodResolver(camperFormSchema), defaultValues })
   const table = useReactTable({ data, columns, getCoreRowModel: getCoreRowModel() })
   const mutation = useMutation({
-    mutationFn: createCamper,
+    mutationFn: (request: CreateCamperRequest) => (editingCamperId === null ? createCamper(request) : updateCamper(editingCamperId, request)),
     onSuccess: async () => {
-      form.reset(defaultValues)
-      setTags([])
-      setTagInput('')
+      resetForm()
       await queryClient.invalidateQueries({ queryKey: ['campers'] })
       await queryClient.invalidateQueries({ queryKey: ['dashboard'] })
     },
   })
+
+  function resetForm() {
+    form.reset(defaultValues)
+    setTags([])
+    setTagInput('')
+    setEditingCamperId(null)
+    setLoadError(false)
+  }
 
   function handleSubmit(values: CamperFormValues) {
     const submittedTags = [...tags, tagInput.trim()].reduce<string[]>((uniqueTags, tag) => {
@@ -143,6 +173,28 @@ export function CampersPage() {
     }
 
     mutation.mutate(request)
+  }
+
+  async function editCamper(camper: CamperSummary) {
+    setLoadError(false)
+    setLoadingCamperId(camper.id)
+
+    try {
+      const detail = await queryClient.fetchQuery({
+        queryKey: ['campers', camper.id],
+        queryFn: () => getCamper(camper.id),
+      })
+
+      form.reset(toFormValues(detail))
+      setTags([...detail.tags])
+      setTagInput('')
+      setEditingCamperId(detail.id)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    } catch {
+      setLoadError(true)
+    } finally {
+      setLoadingCamperId(null)
+    }
   }
 
   function addTag() {
@@ -178,7 +230,8 @@ export function CampersPage() {
       <Card>
         <CardContent>
           <Stack component="form" spacing={3} onSubmit={form.handleSubmit(handleSubmit)}>
-            <Typography variant="h6">Nuovo camper</Typography>
+            <Typography variant="h6">{editingCamperId === null ? 'Nuovo camper' : 'Modifica camper'}</Typography>
+            {loadError && <Alert severity="error">Impossibile caricare il camper selezionato. Riprova.</Alert>}
             {mutation.isError && <Alert severity="error">Impossibile salvare il camper. Controlla i dati e riprova.</Alert>}
             <Grid container spacing={2}>
               <Grid size={{ xs: 12, md: 4 }}>
@@ -248,8 +301,13 @@ export function CampersPage() {
             </Grid>
             <Box>
               <Button type="submit" variant="contained" disabled={mutation.isPending}>
-                {mutation.isPending ? 'Salvataggio...' : 'Aggiungi camper'}
+                {mutation.isPending ? 'Salvataggio...' : editingCamperId === null ? 'Aggiungi camper' : 'Salva modifiche'}
               </Button>
+              {editingCamperId !== null && (
+                <Button sx={{ ml: 2 }} type="button" variant="outlined" onClick={resetForm} disabled={mutation.isPending}>
+                  Annulla modifica
+                </Button>
+              )}
             </Box>
           </Stack>
         </CardContent>
@@ -266,12 +324,13 @@ export function CampersPage() {
                         {flexRender(header.column.columnDef.header, header.getContext())}
                       </TableCell>
                     ))}
+                    <TableCell>Azioni</TableCell>
                   </TableRow>
                 ))}
               </TableHead>
               <TableBody>
                 <TableRow sx={{ bgcolor: 'rgba(123,174,127,.18)' }}>
-                  <TableCell colSpan={columns.length} sx={{ borderLeft: '4px solid #E9A03B', fontWeight: 900 }}>
+                  <TableCell colSpan={columns.length + 1} sx={{ borderLeft: '4px solid #E9A03B', fontWeight: 900 }}>
                     <AddBoxOutlinedIcon fontSize="inherit" sx={{ mr: 1 }} />
                     Camper monitorati
                   </TableCell>
@@ -284,11 +343,22 @@ export function CampersPage() {
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </TableCell>
                     ))}
+                    <TableCell>
+                      <Button
+                        size="small"
+                        startIcon={<EditOutlinedIcon />}
+                        variant="outlined"
+                        onClick={() => void editCamper(row.original)}
+                        disabled={mutation.isPending || loadingCamperId === row.original.id}
+                      >
+                        {loadingCamperId === row.original.id ? 'Carico...' : 'Modifica'}
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
                 {data.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={columns.length}>
+                    <TableCell colSpan={columns.length + 1}>
                       <Typography color="text.secondary">Compila la form qui sopra per aggiungere il primo camper.</Typography>
                     </TableCell>
                   </TableRow>

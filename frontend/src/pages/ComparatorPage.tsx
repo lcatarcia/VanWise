@@ -3,7 +3,7 @@ import { Card, CardContent, Stack, Typography } from '@mui/material'
 export function ComparatorPage() {
   return (
     <Stack spacing={3}>
-      <Typography variant="h4">Comparatore</Typography>
+      <Typography sx={{ fontSize: { xs: '2rem', md: '2.5rem' } }} variant="h4">Comparatore</Typography>
       <Card>
         <CardContent>
           <Typography color="text.secondary">

@@ -170,7 +170,7 @@ export function CampersPage() {
         <Typography sx={{ color: 'secondary.main', fontSize: 12, fontWeight: 900, letterSpacing: '.28em', mb: 1 }}>
           GARAGE INTELLIGENTE
         </Typography>
-        <Typography variant="h4">Camper</Typography>
+        <Typography sx={{ fontSize: { xs: '2rem', md: '2.5rem' } }} variant="h4">Camper</Typography>
         <Typography color="text.secondary">
           Inserisci manualmente i dati e, se parti da un annuncio online, salva anche il link sorgente.
         </Typography>
@@ -256,44 +256,46 @@ export function CampersPage() {
       </Card>
       <Card>
         <CardContent sx={{ p: 0 }}>
-          <Table>
-            <TableHead>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => (
-                    <TableCell key={header.id}>
-                      {flexRender(header.column.columnDef.header, header.getContext())}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))}
-            </TableHead>
-            <TableBody>
-              <TableRow sx={{ bgcolor: 'rgba(123,174,127,.18)' }}>
-                <TableCell colSpan={columns.length} sx={{ borderLeft: '4px solid #E9A03B', fontWeight: 900 }}>
-                  <AddBoxOutlinedIcon fontSize="inherit" sx={{ mr: 1 }} />
-                  Camper monitorati
-                </TableCell>
-              </TableRow>
-              {table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id} sx={{ '&:nth-of-type(even)': { bgcolor: 'rgba(248,247,244,.04)' }, '&:hover': { bgcolor: 'rgba(123,174,127,.10)' } }}>
-                  {row.getVisibleCells().map((cell, index) => (
-                    <TableCell key={cell.id} sx={{ fontWeight: index === 0 ? 700 : 500 }}>
-                      {index === 0 && <TrendIcon direction={row.original.isFavorite ? 'up' : 'down'} />}{' '}
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))}
-              {data.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={columns.length}>
-                    <Typography color="text.secondary">Compila la form qui sopra per aggiungere il primo camper.</Typography>
+          <Box sx={{ overflowX: 'auto' }}>
+            <Table sx={{ minWidth: 820 }}>
+              <TableHead>
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <TableRow key={headerGroup.id}>
+                    {headerGroup.headers.map((header) => (
+                      <TableCell key={header.id}>
+                        {flexRender(header.column.columnDef.header, header.getContext())}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))}
+              </TableHead>
+              <TableBody>
+                <TableRow sx={{ bgcolor: 'rgba(123,174,127,.18)' }}>
+                  <TableCell colSpan={columns.length} sx={{ borderLeft: '4px solid #E9A03B', fontWeight: 900 }}>
+                    <AddBoxOutlinedIcon fontSize="inherit" sx={{ mr: 1 }} />
+                    Camper monitorati
                   </TableCell>
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
+                {table.getRowModel().rows.map((row) => (
+                  <TableRow key={row.id} sx={{ '&:nth-of-type(even)': { bgcolor: 'rgba(248,247,244,.04)' }, '&:hover': { bgcolor: 'rgba(123,174,127,.10)' } }}>
+                    {row.getVisibleCells().map((cell, index) => (
+                      <TableCell key={cell.id} sx={{ fontWeight: index === 0 ? 700 : 500 }}>
+                        {index === 0 && <TrendIcon direction={row.original.isFavorite ? 'up' : 'down'} />}{' '}
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))}
+                {data.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={columns.length}>
+                      <Typography color="text.secondary">Compila la form qui sopra per aggiungere il primo camper.</Typography>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </Box>
         </CardContent>
       </Card>
     </Stack>

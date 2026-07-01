@@ -23,6 +23,7 @@ export function AppLayout() {
     <Box sx={{ display: 'flex', minHeight: '100vh' }}>
       <Drawer
         variant="permanent"
+        sx={{ display: { xs: 'none', lg: 'block' } }}
         slotProps={{
           paper: {
             sx: {
@@ -87,7 +88,65 @@ export function AppLayout() {
           </Stack>
         </Stack>
       </Drawer>
-      <Box component="main" sx={{ flex: 1, ml: '280px', p: { xs: 3, lg: 4 } }}>
+      <Box component="main" sx={{ flex: 1, minWidth: 0, ml: { xs: 0, lg: '280px' }, p: { xs: 2, sm: 3, lg: 4 } }}>
+        <Stack
+          component="header"
+          spacing={2}
+          sx={{
+            display: { xs: 'flex', lg: 'none' },
+            mb: 3,
+            p: { xs: 2, sm: 2.5 },
+            border: '1px solid rgba(123, 174, 127, 0.22)',
+            borderRadius: 4,
+            background:
+              'linear-gradient(135deg, rgba(13, 20, 22, 0.96), rgba(23, 52, 59, 0.9)), radial-gradient(circle at top right, rgba(123, 174, 127, 0.22), transparent 42%)',
+            boxShadow: '0 18px 48px rgba(0, 0, 0, 0.24)',
+          }}
+        >
+          <VanWiseMark />
+          <Box
+            aria-label="Navigazione principale"
+            component="nav"
+            sx={{
+              display: 'flex',
+              gap: 1,
+              mx: -0.5,
+              overflowX: 'auto',
+              pb: 0.5,
+              scrollbarWidth: 'none',
+              '&::-webkit-scrollbar': { display: 'none' },
+            }}
+          >
+            {navigation.map((item) => (
+              <Box
+                key={item.path}
+                component={NavLink}
+                to={item.path}
+                sx={{
+                  alignItems: 'center',
+                  border: '1px solid rgba(248,247,244,.10)',
+                  borderRadius: 999,
+                  color: 'text.secondary',
+                  display: 'inline-flex',
+                  flex: '0 0 auto',
+                  gap: 0.75,
+                  px: 1.5,
+                  py: 1,
+                  whiteSpace: 'nowrap',
+                  '&.active': {
+                    bgcolor: 'rgba(123, 174, 127, 0.14)',
+                    borderColor: 'rgba(123, 174, 127, 0.36)',
+                    color: '#F8F7F4',
+                    fontWeight: 800,
+                  },
+                }}
+              >
+                <Box sx={{ display: 'inline-flex', fontSize: 20 }}>{item.icon}</Box>
+                <Typography component="span" variant="body2">{item.label}</Typography>
+              </Box>
+            ))}
+          </Box>
+        </Stack>
         <Outlet />
       </Box>
     </Box>

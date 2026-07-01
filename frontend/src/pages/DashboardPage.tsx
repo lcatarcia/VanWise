@@ -50,12 +50,12 @@ export function DashboardPage() {
           },
         }}
       >
-        <CardContent sx={{ alignItems: 'center', display: 'flex', gap: 3, justifyContent: 'space-between', minHeight: 150, position: 'relative', zIndex: 1 }}>
-          <Box>
+        <CardContent sx={{ alignItems: { xs: 'flex-start', sm: 'center' }, display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 3, justifyContent: 'space-between', minHeight: 150, position: 'relative', zIndex: 1 }}>
+          <Box sx={{ minWidth: 0 }}>
             <Typography sx={{ color: 'secondary.main', fontSize: 12, fontWeight: 900, letterSpacing: '.28em', mb: 1 }}>
               CHOOSE SMARTER
             </Typography>
-            <Typography variant="h4">Dashboard VanWise</Typography>
+            <Typography sx={{ fontSize: { xs: '2rem', md: '2.5rem' } }} variant="h4">Dashboard VanWise</Typography>
             <Typography color="text.secondary">
               KPI e segnali per scegliere il camper giusto prima della prossima strada.
             </Typography>
@@ -89,7 +89,7 @@ export function DashboardPage() {
             <CardContent>
               <Typography variant="h6">Distribuzione marchi</Typography>
               <Typography color="text.secondary" variant="body2">Vista sintetica del mercato che stai monitorando.</Typography>
-              <Box sx={{ height: 320, mt: 3 }}>
+              <Box sx={{ height: { xs: 260, sm: 320 }, mt: 3, minWidth: 0 }}>
                 <ResponsiveContainer>
                   <BarChart data={data.brandDistribution}>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(248,247,244,.10)" />
@@ -107,34 +107,36 @@ export function DashboardPage() {
           <Card>
             <CardContent>
               <Typography variant="h6">Segnali rapidi</Typography>
-              <Table size="small" sx={{ mt: 2 }}>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Categoria</TableCell>
-                    <TableCell align="right">Valore</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  <TableRow sx={{ bgcolor: 'rgba(123,174,127,.18)' }}>
-                    <TableCell sx={{ fontWeight: 800 }}>
-                      <IndeterminateCheckBoxOutlinedIcon fontSize="inherit" sx={{ mr: 1 }} />
-                      VanWise
-                    </TableCell>
-                    <TableCell align="right" sx={{ fontWeight: 800 }}>{data.totalCampers}</TableCell>
-                  </TableRow>
-                  {serviceRows.map((row, index) => (
-                    <TableRow key={row.label} sx={{ bgcolor: index % 2 === 0 ? 'rgba(248,247,244,.05)' : 'rgba(248,247,244,.025)' }}>
-                      <TableCell sx={{ pl: 4 }}>
-                        <AddBoxOutlinedIcon color="disabled" fontSize="inherit" sx={{ mr: 1 }} />
-                        {row.label}
-                      </TableCell>
-                      <TableCell align="right">
-                        <TrendIcon direction={row.delta} /> {row.value}
-                      </TableCell>
+              <Box sx={{ mt: 2, overflowX: 'auto' }}>
+                <Table size="small" sx={{ minWidth: 340 }}>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Categoria</TableCell>
+                      <TableCell align="right">Valore</TableCell>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHead>
+                  <TableBody>
+                    <TableRow sx={{ bgcolor: 'rgba(123,174,127,.18)' }}>
+                      <TableCell sx={{ fontWeight: 800 }}>
+                        <IndeterminateCheckBoxOutlinedIcon fontSize="inherit" sx={{ mr: 1 }} />
+                        VanWise
+                      </TableCell>
+                      <TableCell align="right" sx={{ fontWeight: 800 }}>{data.totalCampers}</TableCell>
+                    </TableRow>
+                    {serviceRows.map((row, index) => (
+                      <TableRow key={row.label} sx={{ bgcolor: index % 2 === 0 ? 'rgba(248,247,244,.05)' : 'rgba(248,247,244,.025)' }}>
+                        <TableCell sx={{ pl: { xs: 2, sm: 4 } }}>
+                          <AddBoxOutlinedIcon color="disabled" fontSize="inherit" sx={{ mr: 1 }} />
+                          {row.label}
+                        </TableCell>
+                        <TableCell align="right">
+                          <TrendIcon direction={row.delta} /> {row.value}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </Box>
             </CardContent>
           </Card>
         </Grid>

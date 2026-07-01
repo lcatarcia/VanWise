@@ -1,0 +1,39 @@
+trigger:
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: windows-latest
+
+variables:
+  buildConfiguration: Release
+
+steps:
+  - task: UseDotNet@2
+    displayName: Use .NET 10 SDK
+    inputs:
+      packageType: sdk
+      version: 10.0.x
+
+  - task: NodeTool@0
+    displayName: Use Node.js
+    inputs:
+      versionSpec: 22.x
+
+  - script: dotnet restore VanWise.slnx
+    displayName: Restore backend
+
+  - script: dotnet build VanWise.slnx --configuration $(buildConfiguration) --no-restore
+    displayName: Build backend
+
+  - script: dotnet test VanWise.slnx --configuration $(buildConfiguration) --no-build --logger trx
+    displayName: Test backend
+
+  - script: npm ci
+    workingDirectory: frontend
+    displayName: Restore frontend
+
+  - script: npm run build
+    workingDirectory: frontend
+    displayName: Build frontend

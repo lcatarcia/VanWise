@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/VanWise.Api/VanWise.Api.csproj" />
+    <Project Path="src/VanWise.Application/VanWise.Application.csproj" />
+    <Project Path="src/VanWise.Domain/VanWise.Domain.csproj" />
+    <Project Path="src/VanWise.Infrastructure/VanWise.Infrastructure.csproj" />
+    <Project Path="src/VanWise.Persistence/VanWise.Persistence.csproj" />
+    <Project Path="src/VanWise.Shared/VanWise.Shared.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/VanWise.Api.Tests/VanWise.Api.Tests.csproj" />
+    <Project Path="tests/VanWise.Application.Tests/VanWise.Application.Tests.csproj" />
+  </Folder>
+</Solution>

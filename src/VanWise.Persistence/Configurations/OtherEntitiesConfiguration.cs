@@ -34,6 +34,7 @@ public sealed class TagConfiguration : IEntityTypeConfiguration<Tag>
 {
     public void Configure(EntityTypeBuilder<Tag> builder)
     {
+        builder.Property(tag => tag.Id).ValueGeneratedNever();
         builder.Property(tag => tag.Name).HasMaxLength(80).IsRequired();
         builder.HasIndex(tag => tag.Name);
     }

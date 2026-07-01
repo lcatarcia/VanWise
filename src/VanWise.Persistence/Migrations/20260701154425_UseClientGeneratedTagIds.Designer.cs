@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using VanWise.Persistence;
 
@@ -11,9 +12,11 @@ using VanWise.Persistence;
 namespace VanWise.Persistence.Migrations
 {
     [DbContext(typeof(VanWiseDbContext))]
-    partial class VanWiseDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260701154425_UseClientGeneratedTagIds")]
+    partial class UseClientGeneratedTagIds
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

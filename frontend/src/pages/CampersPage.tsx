@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
+import AddBoxOutlinedIcon from '@mui/icons-material/AddBoxOutlined'
 import {
   Alert,
   Box,
@@ -22,6 +23,7 @@ import { createColumnHelper, flexRender, getCoreRowModel, useReactTable } from '
 import { Controller, useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { createCamper, getCampers } from '../api/campers'
+import { TrendIcon } from '../components/TrendIcon'
 import type { CreateCamperRequest } from '../types/camper'
 import type { CamperSummary } from '../types/camper'
 
@@ -39,6 +41,10 @@ const columns = [
     cell: (info) => info.getValue().toLocaleString('it-IT'),
   }),
   columnHelper.accessor('region', { header: 'Regione' }),
+  columnHelper.accessor('pricePerMeter', {
+    header: 'EUR/m',
+    cell: (info) => `EUR ${info.getValue().toLocaleString('it-IT', { maximumFractionDigits: 0 })}`,
+  }),
 ]
 
 const camperFormSchema = z.object({
@@ -114,7 +120,7 @@ export function CampersPage() {
         </Typography>
       </Box>
       <Card>
-        <CardContent>
+        <CardContent sx={{ bgcolor: '#fbfbfa' }}>
           <Stack component="form" spacing={3} onSubmit={form.handleSubmit(handleSubmit)}>
             <Typography variant="h6">Nuovo camper</Typography>
             {mutation.isError && <Alert severity="error">Impossibile salvare il camper. Controlla i dati e riprova.</Alert>}
@@ -183,7 +189,7 @@ export function CampersPage() {
         </CardContent>
       </Card>
       <Card>
-        <CardContent>
+        <CardContent sx={{ p: 0 }}>
           <Table>
             <TableHead>
               {table.getHeaderGroups().map((headerGroup) => (
@@ -197,10 +203,19 @@ export function CampersPage() {
               ))}
             </TableHead>
             <TableBody>
+              <TableRow sx={{ bgcolor: '#d1d1d1' }}>
+                <TableCell colSpan={columns.length} sx={{ borderLeft: '4px solid #111', fontWeight: 900 }}>
+                  <AddBoxOutlinedIcon fontSize="inherit" sx={{ mr: 1 }} />
+                  Camper monitorati
+                </TableCell>
+              </TableRow>
               {table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id}>
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
+                <TableRow key={row.id} sx={{ '&:nth-of-type(even)': { bgcolor: '#f2f2f2' } }}>
+                  {row.getVisibleCells().map((cell, index) => (
+                    <TableCell key={cell.id} sx={{ fontWeight: index === 0 ? 700 : 500 }}>
+                      {index === 0 && <TrendIcon direction={row.original.isFavorite ? 'up' : 'down'} />}{' '}
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </TableCell>
                   ))}
                 </TableRow>
               ))}

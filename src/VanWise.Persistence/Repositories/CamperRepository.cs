@@ -20,9 +20,10 @@ public sealed class CamperRepository(VanWiseDbContext dbContext) : ICamperReposi
                 camper.MileageKm,
                 camper.LengthMeters,
                 camper.Region,
+                camper.City,
                 camper.Dealer == null ? null : camper.Dealer.Name,
                 camper.IsFavorite,
-                camper.LengthMeters <= 0 ? 0 : camper.AskingPrice / camper.LengthMeters))
+                camper.AskingPrice == null || camper.LengthMeters == null || camper.LengthMeters <= 0 ? 0 : camper.AskingPrice.Value / camper.LengthMeters.Value))
             .ToListAsync(cancellationToken);
     }
 
@@ -51,12 +52,13 @@ public sealed class CamperRepository(VanWiseDbContext dbContext) : ICamperReposi
                 camper.Chassis,
                 camper.SleepingPlaces,
                 camper.Region,
+                camper.City,
                 camper.Notes,
                 camper.SourceUrl,
                 camper.IsFavorite,
                 camper.Dealer == null ? null : camper.Dealer.Name,
                 camper.Tags.Select(tag => tag.Name).ToList(),
-                camper.LengthMeters <= 0 ? 0 : camper.AskingPrice / camper.LengthMeters))
+                camper.AskingPrice == null || camper.LengthMeters == null || camper.LengthMeters <= 0 ? 0 : camper.AskingPrice.Value / camper.LengthMeters.Value))
             .FirstOrDefaultAsync(cancellationToken);
     }
 
@@ -77,7 +79,7 @@ public sealed class CamperRepository(VanWiseDbContext dbContext) : ICamperReposi
                 camper.Transmission,
                 camper.Engine,
                 camper.Chassis,
-                camper.LengthMeters <= 0 ? 0 : camper.AskingPrice / camper.LengthMeters,
+                camper.AskingPrice == null || camper.LengthMeters == null || camper.LengthMeters <= 0 ? 0 : camper.AskingPrice.Value / camper.LengthMeters.Value,
                 camper.IsFavorite))
             .ToListAsync(cancellationToken);
     }
@@ -86,11 +88,13 @@ public sealed class CamperRepository(VanWiseDbContext dbContext) : ICamperReposi
     {
         var total = await dbContext.Campers.CountAsync(cancellationToken);
         var favorites = await dbContext.Campers.CountAsync(camper => camper.IsFavorite, cancellationToken);
-        var averagePrice = await dbContext.Campers.AnyAsync(cancellationToken)
-            ? await dbContext.Campers.AverageAsync(camper => camper.AskingPrice, cancellationToken)
+        var campersWithPrice = dbContext.Campers.Where(camper => camper.AskingPrice != null);
+        var campersWithMileage = dbContext.Campers.Where(camper => camper.MileageKm != null);
+        var averagePrice = await campersWithPrice.AnyAsync(cancellationToken)
+            ? await campersWithPrice.AverageAsync(camper => camper.AskingPrice, cancellationToken) ?? 0
             : 0;
-        var averageMileage = await dbContext.Campers.AnyAsync(cancellationToken)
-            ? await dbContext.Campers.AverageAsync(camper => camper.MileageKm, cancellationToken)
+        var averageMileage = await campersWithMileage.AnyAsync(cancellationToken)
+            ? await campersWithMileage.AverageAsync(camper => camper.MileageKm, cancellationToken) ?? 0
             : 0;
 
         return new DashboardStatsDto(
@@ -118,27 +122,27 @@ public sealed class CamperRepository(VanWiseDbContext dbContext) : ICamperReposi
     {
         if (filter.MinPrice is not null)
         {
-            query = query.Where(camper => camper.AskingPrice >= filter.MinPrice);
+            query = query.Where(camper => camper.AskingPrice != null && camper.AskingPrice >= filter.MinPrice);
         }
 
         if (filter.MaxPrice is not null)
         {
-            query = query.Where(camper => camper.AskingPrice <= filter.MaxPrice);
+            query = query.Where(camper => camper.AskingPrice != null && camper.AskingPrice <= filter.MaxPrice);
         }
 
         if (filter.MaxMileageKm is not null)
         {
-            query = query.Where(camper => camper.MileageKm <= filter.MaxMileageKm);
+            query = query.Where(camper => camper.MileageKm != null && camper.MileageKm <= filter.MaxMileageKm);
         }
 
         if (filter.MinLengthMeters is not null)
         {
-            query = query.Where(camper => camper.LengthMeters >= filter.MinLengthMeters);
+            query = query.Where(camper => camper.LengthMeters != null && camper.LengthMeters >= filter.MinLengthMeters);
         }
 
         if (filter.MaxLengthMeters is not null)
         {
-            query = query.Where(camper => camper.LengthMeters <= filter.MaxLengthMeters);
+            query = query.Where(camper => camper.LengthMeters != null && camper.LengthMeters <= filter.MaxLengthMeters);
         }
 
         if (!string.IsNullOrWhiteSpace(filter.Region))
@@ -148,7 +152,7 @@ public sealed class CamperRepository(VanWiseDbContext dbContext) : ICamperReposi
 
         if (filter.SleepingPlaces is not null)
         {
-            query = query.Where(camper => camper.SleepingPlaces >= filter.SleepingPlaces);
+            query = query.Where(camper => camper.SleepingPlaces != null && camper.SleepingPlaces >= filter.SleepingPlaces);
         }
 
         return query;
@@ -168,7 +172,7 @@ public sealed class CamperRepository(VanWiseDbContext dbContext) : ICamperReposi
     {
         return await dbContext.Campers
             .AsNoTracking()
-            .GroupBy(camper => camper.AskingPrice < 50000 ? "< 50k" : camper.AskingPrice < 80000 ? "50k-80k" : "> 80k")
+            .GroupBy(camper => camper.AskingPrice == null ? "Non indicato" : camper.AskingPrice < 50000 ? "< 50k" : camper.AskingPrice < 80000 ? "50k-80k" : "> 80k")
             .Select(group => new DistributionPointDto(group.Key, group.Count()))
             .ToListAsync(cancellationToken);
     }
@@ -177,7 +181,7 @@ public sealed class CamperRepository(VanWiseDbContext dbContext) : ICamperReposi
     {
         return await dbContext.Campers
             .AsNoTracking()
-            .GroupBy(camper => camper.LengthMeters < 6 ? "< 6m" : camper.LengthMeters < 7.5m ? "6m-7.5m" : "> 7.5m")
+            .GroupBy(camper => camper.LengthMeters == null ? "Non indicato" : camper.LengthMeters < 6 ? "< 6m" : camper.LengthMeters < 7.5m ? "6m-7.5m" : "> 7.5m")
             .Select(group => new DistributionPointDto(group.Key, group.Count()))
             .ToListAsync(cancellationToken);
     }

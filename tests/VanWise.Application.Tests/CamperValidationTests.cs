@@ -22,6 +22,7 @@ public sealed class CamperValidationTests
             "Sprinter",
             4,
             "Lombardia",
+            "Milano",
             "Well equipped",
             "https://example.com/hymer",
             true,
@@ -51,6 +52,7 @@ public sealed class CamperValidationTests
             "Lombardia",
             string.Empty,
             string.Empty,
+            string.Empty,
             false,
             []);
 
@@ -59,5 +61,33 @@ public sealed class CamperValidationTests
         var action = () => validator.ValidateAndThrowAsync(request);
 
         await action.Should().ThrowAsync<ValidationException>();
+    }
+
+    [Fact]
+    public async Task CreateCamperRequestValidator_accepts_optional_camper_fields()
+    {
+        var request = new CreateCamperRequest(
+            "Hymer",
+            "B-MC T 580",
+            null,
+            null,
+            null,
+            null,
+            string.Empty,
+            string.Empty,
+            string.Empty,
+            null,
+            string.Empty,
+            "Milano",
+            string.Empty,
+            string.Empty,
+            false,
+            []);
+
+        var validator = new CreateCamperRequestValidator();
+
+        var result = await validator.ValidateAsync(request);
+
+        result.IsValid.Should().BeTrue();
     }
 }

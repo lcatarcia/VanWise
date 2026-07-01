@@ -2,11 +2,12 @@ export interface CamperSummary {
   id: string
   brand: string
   model: string
-  year: number
-  askingPrice: number
-  mileageKm: number
-  lengthMeters: number
+  year: number | null
+  askingPrice: number | null
+  mileageKm: number | null
+  lengthMeters: number | null
   region: string
+  city: string
   dealerName?: string
   isFavorite: boolean
   pricePerMeter: number
@@ -15,15 +16,16 @@ export interface CamperSummary {
 export interface CreateCamperRequest {
   brand: string
   model: string
-  year: number
-  askingPrice: number
-  mileageKm: number
-  lengthMeters: number
+  year: number | null
+  askingPrice: number | null
+  mileageKm: number | null
+  lengthMeters: number | null
   transmission: string
   engine: string
   chassis: string
-  sleepingPlaces: number
+  sleepingPlaces: number | null
   region: string
+  city: string
   notes: string
   sourceUrl: string
   isFavorite: boolean

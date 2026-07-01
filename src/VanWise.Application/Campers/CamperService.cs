@@ -36,11 +36,12 @@ public sealed class CamperService(
             request.Chassis,
             request.SleepingPlaces,
             request.Region,
+            request.City,
             request.Notes,
             request.SourceUrl,
             request.IsFavorite);
 
-        camper.ReplaceTags(request.Tags);
+        camper.ReplaceTags(request.Tags ?? []);
         camperRepository.Add(camper);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
@@ -70,11 +71,12 @@ public sealed class CamperService(
             request.Chassis,
             request.SleepingPlaces,
             request.Region,
+            request.City,
             request.Notes,
             request.SourceUrl,
             request.IsFavorite);
 
-        camper.ReplaceTags(request.Tags);
+        camper.ReplaceTags(request.Tags ?? []);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return await camperRepository.GetDetailAsync(id, cancellationToken);

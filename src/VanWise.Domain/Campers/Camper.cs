@@ -14,15 +14,16 @@ public sealed class Camper : Entity
 
     public string Brand { get; private set; } = string.Empty;
     public string Model { get; private set; } = string.Empty;
-    public int Year { get; private set; }
-    public decimal AskingPrice { get; private set; }
-    public int MileageKm { get; private set; }
-    public decimal LengthMeters { get; private set; }
+    public int? Year { get; private set; }
+    public decimal? AskingPrice { get; private set; }
+    public int? MileageKm { get; private set; }
+    public decimal? LengthMeters { get; private set; }
     public string Transmission { get; private set; } = string.Empty;
     public string Engine { get; private set; } = string.Empty;
     public string Chassis { get; private set; } = string.Empty;
-    public int SleepingPlaces { get; private set; }
+    public int? SleepingPlaces { get; private set; }
     public string Region { get; private set; } = string.Empty;
+    public string City { get; private set; } = string.Empty;
     public string Notes { get; private set; } = string.Empty;
     public string SourceUrl { get; private set; } = string.Empty;
     public bool IsFavorite { get; private set; }
@@ -42,53 +43,56 @@ public sealed class Camper : Entity
     public Camper(
         string brand,
         string model,
-        int year,
-        decimal askingPrice,
-        int mileageKm,
-        decimal lengthMeters,
+        int? year,
+        decimal? askingPrice,
+        int? mileageKm,
+        decimal? lengthMeters,
         string transmission,
         string engine,
         string chassis,
-        int sleepingPlaces,
+        int? sleepingPlaces,
         string region,
+        string city,
         string notes,
         string sourceUrl,
         bool isFavorite)
     {
-        UpdateDetails(brand, model, year, askingPrice, mileageKm, lengthMeters, transmission, engine, chassis, sleepingPlaces, region, notes, sourceUrl, isFavorite);
+        UpdateDetails(brand, model, year, askingPrice, mileageKm, lengthMeters, transmission, engine, chassis, sleepingPlaces, region, city, notes, sourceUrl, isFavorite);
     }
 
-    public decimal PricePerMeter => LengthMeters <= 0 ? 0 : decimal.Round(AskingPrice / LengthMeters, 2);
+    public decimal PricePerMeter => AskingPrice is null || LengthMeters is null or <= 0 ? 0 : decimal.Round(AskingPrice.Value / LengthMeters.Value, 2);
 
     public void UpdateDetails(
         string brand,
         string model,
-        int year,
-        decimal askingPrice,
-        int mileageKm,
-        decimal lengthMeters,
+        int? year,
+        decimal? askingPrice,
+        int? mileageKm,
+        decimal? lengthMeters,
         string transmission,
         string engine,
         string chassis,
-        int sleepingPlaces,
+        int? sleepingPlaces,
         string region,
+        string city,
         string notes,
         string sourceUrl,
         bool isFavorite)
     {
-        Brand = brand.Trim();
-        Model = model.Trim();
+        Brand = Normalize(brand);
+        Model = Normalize(model);
         Year = year;
         AskingPrice = askingPrice;
         MileageKm = mileageKm;
         LengthMeters = lengthMeters;
-        Transmission = transmission.Trim();
-        Engine = engine.Trim();
-        Chassis = chassis.Trim();
+        Transmission = Normalize(transmission);
+        Engine = Normalize(engine);
+        Chassis = Normalize(chassis);
         SleepingPlaces = sleepingPlaces;
-        Region = region.Trim();
-        Notes = notes.Trim();
-        SourceUrl = sourceUrl.Trim();
+        Region = Normalize(region);
+        City = Normalize(city);
+        Notes = Normalize(notes);
+        SourceUrl = Normalize(sourceUrl);
         IsFavorite = isFavorite;
         MarkUpdated();
     }
@@ -97,11 +101,16 @@ public sealed class Camper : Entity
     {
         _tags.Clear();
 
-        foreach (var name in names.Select(name => name.Trim()).Where(name => name.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase))
+        foreach (var name in names.Select(Normalize).Where(name => name.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase))
         {
             _tags.Add(new Tag(name));
         }
 
         MarkUpdated();
+    }
+
+    private static string Normalize(string? value)
+    {
+        return value?.Trim() ?? string.Empty;
     }
 }

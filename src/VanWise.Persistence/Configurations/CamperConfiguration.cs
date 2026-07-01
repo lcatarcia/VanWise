@@ -17,7 +17,8 @@ public sealed class CamperConfiguration : IEntityTypeConfiguration<Camper>
         builder.Property(camper => camper.Transmission).HasMaxLength(60);
         builder.Property(camper => camper.Engine).HasMaxLength(120);
         builder.Property(camper => camper.Chassis).HasMaxLength(120);
-        builder.Property(camper => camper.Region).HasMaxLength(80).IsRequired();
+        builder.Property(camper => camper.Region).HasMaxLength(80);
+        builder.Property(camper => camper.City).HasMaxLength(80);
         builder.Property(camper => camper.Notes).HasMaxLength(4000);
         builder.Property(camper => camper.SourceUrl).HasMaxLength(1000);
 
@@ -25,6 +26,7 @@ public sealed class CamperConfiguration : IEntityTypeConfiguration<Camper>
         builder.HasIndex(camper => camper.AskingPrice);
         builder.HasIndex(camper => camper.MileageKm);
         builder.HasIndex(camper => camper.Region);
+        builder.HasIndex(camper => camper.City);
 
         builder.Navigation(camper => camper.Tags).UsePropertyAccessMode(PropertyAccessMode.Field);
         builder.Navigation(camper => camper.Attachments).UsePropertyAccessMode(PropertyAccessMode.Field);

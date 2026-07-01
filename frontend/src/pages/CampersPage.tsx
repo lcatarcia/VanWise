@@ -6,6 +6,7 @@ import {
   Button,
   Card,
   CardContent,
+  Chip,
   FormControlLabel,
   Grid,
   Stack,
@@ -20,6 +21,7 @@ import {
 } from '@mui/material'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createColumnHelper, flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table'
+import { useState, type KeyboardEvent } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { createCamper, getCampers } from '../api/campers'
@@ -29,18 +31,42 @@ import type { CamperSummary } from '../types/camper'
 
 const columnHelper = createColumnHelper<CamperSummary>()
 
+function formatOptionalNumber(value: number | null, options?: Intl.NumberFormatOptions) {
+  return value === null ? '-' : value.toLocaleString('it-IT', options)
+}
+
+function parseOptionalNumber(value: unknown) {
+  if (value === '' || value === null || value === undefined) {
+    return null
+  }
+
+  if (typeof value === 'number') {
+    return Number.isNaN(value) ? null : value
+  }
+
+  if (typeof value === 'string') {
+    const parsedValue = Number(value.replace(',', '.'))
+    return Number.isNaN(parsedValue) ? value : parsedValue
+  }
+
+  return value
+}
+
+const optionalNumber = z.number().nullable()
+
 const columns = [
   columnHelper.accessor((row) => `${row.brand} ${row.model}`, { id: 'model', header: 'Camper' }),
   columnHelper.accessor('year', { header: 'Anno' }),
   columnHelper.accessor('askingPrice', {
     header: 'Prezzo',
-    cell: (info) => `EUR ${info.getValue().toLocaleString('it-IT')}`,
+    cell: (info) => (info.getValue() === null ? '-' : `EUR ${formatOptionalNumber(info.getValue())}`),
   }),
   columnHelper.accessor('mileageKm', {
     header: 'Km',
-    cell: (info) => info.getValue().toLocaleString('it-IT'),
+    cell: (info) => formatOptionalNumber(info.getValue()),
   }),
   columnHelper.accessor('region', { header: 'Regione' }),
+  columnHelper.accessor('city', { header: 'Città' }),
   columnHelper.accessor('pricePerMeter', {
     header: 'EUR/m',
     cell: (info) => `EUR ${info.getValue().toLocaleString('it-IT', { maximumFractionDigits: 0 })}`,
@@ -50,19 +76,19 @@ const columns = [
 const camperFormSchema = z.object({
   brand: z.string().min(1, 'Marca obbligatoria').max(100),
   model: z.string().min(1, 'Modello obbligatorio').max(120),
-  year: z.number().int().min(1980).max(new Date().getFullYear() + 1),
-  askingPrice: z.number().positive('Prezzo obbligatorio'),
-  mileageKm: z.number().int().min(0),
-  lengthMeters: z.number().min(3).max(12),
+  year: optionalNumber.refine((value) => value === null || Number.isInteger(value), 'Inserisci un anno valido').refine((value) => value === null || (value >= 1980 && value <= new Date().getFullYear() + 1), 'Anno non valido'),
+  askingPrice: optionalNumber.refine((value) => value === null || value > 0, 'Il prezzo deve essere maggiore di zero'),
+  mileageKm: optionalNumber.refine((value) => value === null || (Number.isInteger(value) && value >= 0), 'Inserisci km validi'),
+  lengthMeters: optionalNumber.refine((value) => value === null || (value >= 3 && value <= 12), 'La lunghezza deve essere tra 3 e 12 m'),
   transmission: z.string().max(60),
   engine: z.string().max(120),
   chassis: z.string().max(120),
-  sleepingPlaces: z.number().int().min(1).max(10),
-  region: z.string().min(1, 'Regione obbligatoria').max(80),
+  sleepingPlaces: optionalNumber.refine((value) => value === null || (Number.isInteger(value) && value >= 1 && value <= 10), 'Inserisci posti letto validi'),
+  region: z.string().max(80),
+  city: z.string().max(80),
   notes: z.string().max(4000),
   sourceUrl: z.union([z.url('Inserisci un URL valido'), z.literal('')]),
   isFavorite: z.boolean(),
-  tags: z.string(),
 })
 
 type CamperFormValues = z.infer<typeof camperFormSchema>
@@ -70,23 +96,25 @@ type CamperFormValues = z.infer<typeof camperFormSchema>
 const defaultValues: CamperFormValues = {
   brand: '',
   model: '',
-  year: new Date().getFullYear(),
-  askingPrice: 0,
-  mileageKm: 0,
-  lengthMeters: 6.5,
+  year: null,
+  askingPrice: null,
+  mileageKm: null,
+  lengthMeters: null,
   transmission: '',
   engine: '',
   chassis: '',
-  sleepingPlaces: 4,
+  sleepingPlaces: null,
   region: '',
+  city: '',
   notes: '',
   sourceUrl: '',
   isFavorite: false,
-  tags: '',
 }
 
 export function CampersPage() {
   const queryClient = useQueryClient()
+  const [tagInput, setTagInput] = useState('')
+  const [tags, setTags] = useState<string[]>([])
   const { data = [] } = useQuery({ queryKey: ['campers'], queryFn: getCampers, retry: false })
   const form = useForm<CamperFormValues>({ resolver: zodResolver(camperFormSchema), defaultValues })
   const table = useReactTable({ data, columns, getCoreRowModel: getCoreRowModel() })
@@ -94,21 +122,46 @@ export function CampersPage() {
     mutationFn: createCamper,
     onSuccess: async () => {
       form.reset(defaultValues)
+      setTags([])
+      setTagInput('')
       await queryClient.invalidateQueries({ queryKey: ['campers'] })
       await queryClient.invalidateQueries({ queryKey: ['dashboard'] })
     },
   })
 
   function handleSubmit(values: CamperFormValues) {
+    const submittedTags = [...tags, tagInput.trim()].reduce<string[]>((uniqueTags, tag) => {
+      if (tag.length > 0 && !uniqueTags.some((uniqueTag) => uniqueTag.toLocaleLowerCase() === tag.toLocaleLowerCase())) {
+        uniqueTags.push(tag)
+      }
+
+      return uniqueTags
+    }, [])
     const request: CreateCamperRequest = {
       ...values,
-      tags: values.tags
-        .split(',')
-        .map((tag) => tag.trim())
-        .filter(Boolean),
+      tags: submittedTags,
     }
 
     mutation.mutate(request)
+  }
+
+  function addTag() {
+    const trimmedTag = tagInput.trim()
+    if (trimmedTag.length === 0 || tags.some((tag) => tag.toLocaleLowerCase() === trimmedTag.toLocaleLowerCase())) {
+      return
+    }
+
+    setTags((currentTags) => [...currentTags, trimmedTag])
+    setTagInput('')
+  }
+
+  function handleTagKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key !== 'Enter') {
+      return
+    }
+
+    event.preventDefault()
+    addTag()
   }
 
   return (
@@ -138,16 +191,16 @@ export function CampersPage() {
                 <TextField fullWidth label="URL annuncio" placeholder="https://..." {...form.register('sourceUrl')} error={!!form.formState.errors.sourceUrl} helperText={form.formState.errors.sourceUrl?.message ?? 'Opzionale: pagina web da cui hai preso i dati'} />
               </Grid>
               <Grid size={{ xs: 12, md: 3 }}>
-                <TextField fullWidth label="Anno" type="number" {...form.register('year', { valueAsNumber: true })} error={!!form.formState.errors.year} helperText={form.formState.errors.year?.message} />
+                <TextField fullWidth label="Anno" type="number" {...form.register('year', { setValueAs: parseOptionalNumber })} error={!!form.formState.errors.year} helperText={form.formState.errors.year?.message} />
               </Grid>
               <Grid size={{ xs: 12, md: 3 }}>
-                <TextField fullWidth label="Prezzo" type="number" {...form.register('askingPrice', { valueAsNumber: true })} error={!!form.formState.errors.askingPrice} helperText={form.formState.errors.askingPrice?.message} />
+                <TextField fullWidth label="Prezzo" type="number" {...form.register('askingPrice', { setValueAs: parseOptionalNumber })} error={!!form.formState.errors.askingPrice} helperText={form.formState.errors.askingPrice?.message} />
               </Grid>
               <Grid size={{ xs: 12, md: 3 }}>
-                <TextField fullWidth label="Km" type="number" {...form.register('mileageKm', { valueAsNumber: true })} error={!!form.formState.errors.mileageKm} helperText={form.formState.errors.mileageKm?.message} />
+                <TextField fullWidth label="Km" type="number" {...form.register('mileageKm', { setValueAs: parseOptionalNumber })} error={!!form.formState.errors.mileageKm} helperText={form.formState.errors.mileageKm?.message} />
               </Grid>
               <Grid size={{ xs: 12, md: 3 }}>
-                <TextField fullWidth label="Lunghezza (m)" type="number" {...form.register('lengthMeters', { valueAsNumber: true })} error={!!form.formState.errors.lengthMeters} helperText={form.formState.errors.lengthMeters?.message} />
+                <TextField fullWidth label="Lunghezza (m)" inputMode="decimal" placeholder="6,5" {...form.register('lengthMeters', { setValueAs: parseOptionalNumber })} error={!!form.formState.errors.lengthMeters} helperText={form.formState.errors.lengthMeters?.message} />
               </Grid>
               <Grid size={{ xs: 12, md: 3 }}>
                 <TextField fullWidth label="Cambio" {...form.register('transmission')} />
@@ -159,13 +212,23 @@ export function CampersPage() {
                 <TextField fullWidth label="Telaio" {...form.register('chassis')} />
               </Grid>
               <Grid size={{ xs: 12, md: 3 }}>
-                <TextField fullWidth label="Posti letto" type="number" {...form.register('sleepingPlaces', { valueAsNumber: true })} error={!!form.formState.errors.sleepingPlaces} helperText={form.formState.errors.sleepingPlaces?.message} />
+                <TextField fullWidth label="Posti letto" type="number" {...form.register('sleepingPlaces', { setValueAs: parseOptionalNumber })} error={!!form.formState.errors.sleepingPlaces} helperText={form.formState.errors.sleepingPlaces?.message} />
               </Grid>
               <Grid size={{ xs: 12, md: 4 }}>
                 <TextField fullWidth label="Regione" {...form.register('region')} error={!!form.formState.errors.region} helperText={form.formState.errors.region?.message} />
               </Grid>
               <Grid size={{ xs: 12, md: 4 }}>
-                <TextField fullWidth label="Tag" placeholder="garage, pannelli solari, automatico" {...form.register('tags')} />
+                <TextField fullWidth label="Città" {...form.register('city')} error={!!form.formState.errors.city} helperText={form.formState.errors.city?.message} />
+              </Grid>
+              <Grid size={{ xs: 12, md: 4 }}>
+                <TextField fullWidth label="Tag" placeholder="Scrivi un tag e premi Invio" value={tagInput} onBlur={addTag} onChange={(event) => setTagInput(event.target.value)} onKeyDown={handleTagKeyDown} />
+                {tags.length > 0 && (
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1 }}>
+                    {tags.map((tag) => (
+                      <Chip key={tag} label={tag} onDelete={() => setTags((currentTags) => currentTags.filter((currentTag) => currentTag !== tag))} />
+                    ))}
+                  </Box>
+                )}
               </Grid>
               <Grid size={{ xs: 12, md: 4 }}>
                 <Controller

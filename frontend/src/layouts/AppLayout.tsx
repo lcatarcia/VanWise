@@ -16,7 +16,7 @@ const navigation = [
   { label: 'Checklist', path: '/checklist', icon: <ChecklistOutlinedIcon /> },
 ]
 
-const filterFields = ['Marca', 'Modello', 'Prezzo', 'Km', 'Lunghezza', 'Regione', 'Rivenditore', 'Tag']
+const filterFields = ['Marca', 'Modello', 'Prezzo', 'Km', 'Lunghezza', 'Regione', 'Città', 'Rivenditore', 'Tag']
 
 export function AppLayout() {
   return (

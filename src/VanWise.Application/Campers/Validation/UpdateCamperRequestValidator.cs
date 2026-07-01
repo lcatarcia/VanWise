@@ -14,7 +14,8 @@ public sealed class UpdateCamperRequestValidator : CamperRequestValidatorBase<Up
             request => request.MileageKm,
             request => request.LengthMeters,
             request => request.SleepingPlaces,
-            request => request.Region);
+            request => request.Region,
+            request => request.City);
 
         RuleFor(request => request.SourceUrl)
             .MaximumLength(1000)

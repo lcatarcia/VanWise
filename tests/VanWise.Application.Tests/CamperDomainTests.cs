@@ -20,10 +20,35 @@ public sealed class CamperDomainTests
             "Ducato",
             4,
             "Veneto",
+            "Padova",
             string.Empty,
             "https://example.com/adria",
             false);
 
         camper.PricePerMeter.Should().Be(10944.21m);
+    }
+
+    [Fact]
+    public void Camper_trims_city_and_keeps_missing_price_per_meter_zero()
+    {
+        var camper = new Camper(
+            "Adria",
+            "Matrix",
+            null,
+            null,
+            null,
+            null,
+            string.Empty,
+            string.Empty,
+            string.Empty,
+            null,
+            "Veneto",
+            " Padova ",
+            string.Empty,
+            string.Empty,
+            false);
+
+        camper.City.Should().Be("Padova");
+        camper.PricePerMeter.Should().Be(0);
     }
 }

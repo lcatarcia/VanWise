@@ -6,6 +6,7 @@ import FilterAltOutlinedIcon from '@mui/icons-material/FilterAltOutlined'
 import PaymentsOutlinedIcon from '@mui/icons-material/PaymentsOutlined'
 import { Box, Checkbox, Divider, Drawer, List, ListItemButton, ListItemIcon, ListItemText, Stack, Typography } from '@mui/material'
 import { NavLink, Outlet } from 'react-router-dom'
+import { VanWiseMark } from '../components/VanWiseMark'
 
 const navigation = [
   { label: 'Dashboard', path: '/dashboard', icon: <AnalyticsOutlinedIcon /> },
@@ -26,15 +27,17 @@ export function AppLayout() {
           paper: {
             sx: {
               width: 280,
-              borderRight: '1px solid #d4d4d4',
-              background: '#f8f8f6',
+              borderRight: '1px solid rgba(123, 174, 127, 0.22)',
+              background:
+                'linear-gradient(180deg, rgba(13, 20, 22, 0.96), rgba(23, 52, 59, 0.92)), radial-gradient(circle at top, rgba(123, 174, 127, 0.22), transparent 38%)',
+              boxShadow: '18px 0 60px rgba(0, 0, 0, 0.32)',
             },
           },
         }}
       >
         <Stack spacing={3} sx={{ px: 2.5, py: 3 }}>
-          <Box>
-            <Typography color="primary" variant="h5">VanWise</Typography>
+          <Box sx={{ borderBottom: '1px solid rgba(248,247,244,.12)', pb: 2 }}>
+            <VanWiseMark />
             <Typography color="text.secondary" variant="body2">
               Scegli il camper ideale con dati, scoring e comparazioni.
             </Typography>
@@ -46,12 +49,19 @@ export function AppLayout() {
                 component={NavLink}
                 to={item.path}
                 sx={{
-                  borderRadius: 1,
+                  border: '1px solid transparent',
+                  borderRadius: 3,
                   color: 'text.secondary',
+                  my: 0.25,
                   '&.active': {
-                    bgcolor: '#dedede',
-                    color: 'text.primary',
+                    bgcolor: 'rgba(123, 174, 127, 0.14)',
+                    borderColor: 'rgba(123, 174, 127, 0.36)',
+                    boxShadow: '0 10px 28px rgba(0, 0, 0, 0.24)',
+                    color: '#F8F7F4',
                     fontWeight: 800,
+                  },
+                  '&:hover': {
+                    bgcolor: 'rgba(248, 247, 244, 0.07)',
                   },
                 }}
               >
@@ -60,8 +70,8 @@ export function AppLayout() {
               </ListItemButton>
             ))}
           </List>
-          <Divider />
-          <Stack spacing={1}>
+          <Divider sx={{ borderColor: 'rgba(248,247,244,.12)' }} />
+          <Stack spacing={1} sx={{ bgcolor: 'rgba(248,247,244,.05)', border: '1px solid rgba(248,247,244,.10)', borderRadius: 4, p: 2 }}>
             <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
               <FilterAltOutlinedIcon fontSize="small" />
               <Typography sx={{ fontWeight: 800 }}>Campi filtro</Typography>
@@ -69,7 +79,7 @@ export function AppLayout() {
             <Stack spacing={0.25}>
               {filterFields.map((field, index) => (
                 <Box key={field} sx={{ alignItems: 'center', display: 'flex', gap: 0.5 }}>
-                  <Checkbox checked={index < 4} size="small" sx={{ p: 0.25 }} />
+                  <Checkbox checked={index < 4} size="small" sx={{ color: 'rgba(248,247,244,.45)', p: 0.25 }} />
                   <Typography color="text.secondary" variant="body2">{field}</Typography>
                 </Box>
               ))}

@@ -114,13 +114,16 @@ export function CampersPage() {
   return (
     <Stack spacing={3}>
       <Box>
+        <Typography sx={{ color: 'secondary.main', fontSize: 12, fontWeight: 900, letterSpacing: '.28em', mb: 1 }}>
+          GARAGE INTELLIGENTE
+        </Typography>
         <Typography variant="h4">Camper</Typography>
         <Typography color="text.secondary">
           Inserisci manualmente i dati e, se parti da un annuncio online, salva anche il link sorgente.
         </Typography>
       </Box>
       <Card>
-        <CardContent sx={{ bgcolor: '#fbfbfa' }}>
+        <CardContent>
           <Stack component="form" spacing={3} onSubmit={form.handleSubmit(handleSubmit)}>
             <Typography variant="h6">Nuovo camper</Typography>
             {mutation.isError && <Alert severity="error">Impossibile salvare il camper. Controlla i dati e riprova.</Alert>}
@@ -203,14 +206,14 @@ export function CampersPage() {
               ))}
             </TableHead>
             <TableBody>
-              <TableRow sx={{ bgcolor: '#d1d1d1' }}>
-                <TableCell colSpan={columns.length} sx={{ borderLeft: '4px solid #111', fontWeight: 900 }}>
+              <TableRow sx={{ bgcolor: 'rgba(123,174,127,.18)' }}>
+                <TableCell colSpan={columns.length} sx={{ borderLeft: '4px solid #E9A03B', fontWeight: 900 }}>
                   <AddBoxOutlinedIcon fontSize="inherit" sx={{ mr: 1 }} />
                   Camper monitorati
                 </TableCell>
               </TableRow>
               {table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id} sx={{ '&:nth-of-type(even)': { bgcolor: '#f2f2f2' } }}>
+                <TableRow key={row.id} sx={{ '&:nth-of-type(even)': { bgcolor: 'rgba(248,247,244,.04)' }, '&:hover': { bgcolor: 'rgba(123,174,127,.10)' } }}>
                   {row.getVisibleCells().map((cell, index) => (
                     <TableCell key={cell.id} sx={{ fontWeight: index === 0 ? 700 : 500 }}>
                       {index === 0 && <TrendIcon direction={row.original.isFavorite ? 'up' : 'down'} />}{' '}

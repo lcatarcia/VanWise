@@ -13,7 +13,7 @@ export function TrendIcon({ direction }: TrendIconProps) {
   }
 
   const Icon = direction === 'down' ? KeyboardDoubleArrowDownOutlinedIcon : KeyboardDoubleArrowUpOutlinedIcon
-  const color = direction === 'down' ? '#c74f46' : '#2f8f5b'
+  const color = direction === 'down' ? '#ff6b5f' : '#7BAE7F'
 
   return (
     <Box component="span" sx={{ color, display: 'inline-flex', verticalAlign: 'middle' }}>

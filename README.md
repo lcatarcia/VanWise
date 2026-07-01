@@ -50,3 +50,21 @@ Deploy frontend:
 ```
 
 Keep `createStorage` and `createApplicationInsights` set to `false` in `infra\parameters.dev.json` until those features are needed.
+
+## GitHub Actions deployment
+
+The repository also supports low-cost deployment through GitHub Actions using Azure publish profiles and tokens.
+
+Create these repository secrets in GitHub:
+
+| Secret | Where to get it | Used by |
+| --- | --- | --- |
+| `AZURE_API_PUBLISH_PROFILE` | Azure Portal > App Service `app-vanwise-dev-api` > Get publish profile | `.github/workflows/deploy-api.yml` |
+| `AZURE_STATIC_WEB_APPS_API_TOKEN` | Azure Portal > Static Web App `stapp-vanwise-dev-web` > Manage deployment token | `.github/workflows/deploy-frontend.yml` |
+| `AZURE_SQL_CONNECTION_STRING` | Azure SQL connection string for the `sqldb-vanwise-dev` database | `.github/workflows/migrate-database.yml` |
+
+Deployment behavior:
+
+- API deploys automatically on pushes to `main` that change backend files.
+- Frontend deploys automatically on pushes to `main` that change frontend files.
+- Database migrations are manual: run the **Migrate Database** workflow from the GitHub Actions tab when schema changes are ready.

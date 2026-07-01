@@ -1,0 +1,30 @@
+name: Migrate Database
+
+on:
+  workflow_dispatch:
+
+env:
+  DOTNET_VERSION: "10.0.x"
+
+jobs:
+  migrate:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Install EF Core tools
+        run: dotnet tool install --global dotnet-ef
+
+      - name: Apply EF Core migrations
+        run: >
+          dotnet ef database update
+          --project src\VanWise.Persistence\VanWise.Persistence.csproj
+          --startup-project src\VanWise.Api\VanWise.Api.csproj
+          --connection "${{ secrets.AZURE_SQL_CONNECTION_STRING }}"

@@ -1,0 +1,50 @@
+name: Deploy API
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "src/**"
+      - "tests/**"
+      - "VanWise.slnx"
+      - "global.json"
+      - ".github/workflows/deploy-api.yml"
+  workflow_dispatch:
+
+env:
+  DOTNET_VERSION: "10.0.x"
+  BUILD_CONFIGURATION: Release
+  AZURE_API_APP_NAME: app-vanwise-dev-api
+
+jobs:
+  build-test-deploy:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore
+        run: dotnet restore VanWise.slnx
+
+      - name: Build
+        run: dotnet build VanWise.slnx --configuration $env:BUILD_CONFIGURATION --no-restore
+
+      - name: Test
+        run: dotnet test VanWise.slnx --configuration $env:BUILD_CONFIGURATION --no-build --logger trx
+
+      - name: Publish API
+        run: dotnet publish src\VanWise.Api\VanWise.Api.csproj --configuration $env:BUILD_CONFIGURATION --output artifacts\api
+
+      - name: Deploy API to Azure App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ env.AZURE_API_APP_NAME }}
+          publish-profile: ${{ secrets.AZURE_API_PUBLISH_PROFILE }}
+          package: artifacts\api

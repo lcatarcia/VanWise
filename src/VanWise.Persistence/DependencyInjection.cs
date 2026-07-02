@@ -16,6 +16,7 @@ public static class DependencyInjection
             options.UseSqlServer(connectionString, sql => sql.MigrationsAssembly(typeof(VanWiseDbContext).Assembly.FullName)));
 
         services.AddScoped<ICamperRepository, CamperRepository>();
+        services.AddScoped<IVisitChecklistRepository, VisitChecklistRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         return services;

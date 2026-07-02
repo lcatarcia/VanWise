@@ -56,6 +56,11 @@ public sealed class VisitChecklistConfiguration : IEntityTypeConfiguration<Visit
     public void Configure(EntityTypeBuilder<VisitChecklist> builder)
     {
         builder.Navigation(checklist => checklist.Items).UsePropertyAccessMode(PropertyAccessMode.Field);
+        builder
+            .HasMany(checklist => checklist.Items)
+            .WithOne()
+            .HasForeignKey(item => item.VisitChecklistId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }
 

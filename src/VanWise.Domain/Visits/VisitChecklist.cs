@@ -25,4 +25,53 @@ public sealed class VisitChecklist : Entity
         _items.Add(new ChecklistItem(category, description, status, notes));
         MarkUpdated();
     }
+
+    public void UpdateVisitDate(DateTimeOffset visitDate)
+    {
+        VisitDate = visitDate;
+        MarkUpdated();
+    }
+
+    public void ReplaceItems(IEnumerable<ChecklistItemUpdate> items)
+    {
+        var requestedItems = items.ToList();
+        var requestedIds = requestedItems
+            .Where(item => item.Id is not null)
+            .Select(item => item.Id!.Value)
+            .ToList();
+
+        if (requestedIds.Count != requestedIds.Distinct().Count())
+        {
+            throw new ArgumentException("Checklist item ids must be unique.", nameof(items));
+        }
+
+        var existingItemIds = _items.Select(item => item.Id).ToHashSet();
+        if (requestedIds.Any(id => !existingItemIds.Contains(id)))
+        {
+            throw new ArgumentException("Checklist item does not belong to this checklist.", nameof(items));
+        }
+
+        _items.RemoveAll(item => !requestedIds.Contains(item.Id));
+
+        foreach (var item in requestedItems)
+        {
+            if (item.Id is null)
+            {
+                _items.Add(new ChecklistItem(item.Category, item.Description, item.Status, item.Notes));
+                continue;
+            }
+
+            var existingItem = _items.Single(existing => existing.Id == item.Id.Value);
+            existingItem.UpdateDetails(item.Category, item.Description, item.Status, item.Notes);
+        }
+
+        MarkUpdated();
+    }
 }
+
+public sealed record ChecklistItemUpdate(
+    Guid? Id,
+    string Category,
+    string Description,
+    ChecklistItemStatus Status,
+    string Notes);

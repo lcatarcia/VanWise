@@ -16,9 +16,15 @@ public sealed class ChecklistItem : Entity
 
     public ChecklistItem(string category, string description, ChecklistItemStatus status, string notes)
     {
+        UpdateDetails(category, description, status, notes);
+    }
+
+    public void UpdateDetails(string category, string description, ChecklistItemStatus status, string notes)
+    {
         Category = category.Trim();
         Description = description.Trim();
         Status = status;
         Notes = notes.Trim();
+        MarkUpdated();
     }
 }

@@ -99,11 +99,17 @@ public sealed class CamperService(
 
     public Task<IReadOnlyCollection<CamperComparisonDto>> CompareAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken)
     {
-        if (ids.Count is < 2 or > 4)
+        var distinctIds = ids.Distinct().ToList();
+        if (distinctIds.Count is < 2 or > 4)
         {
             throw new ValidationException("Select between 2 and 4 campers for comparison.");
         }
 
-        return camperRepository.GetComparisonAsync(ids, cancellationToken);
+        if (distinctIds.Count != ids.Count)
+        {
+            throw new ValidationException("Select distinct campers for comparison.");
+        }
+
+        return camperRepository.GetComparisonAsync(distinctIds, cancellationToken);
     }
 }

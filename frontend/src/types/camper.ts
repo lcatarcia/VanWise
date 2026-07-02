@@ -54,6 +54,22 @@ export interface CamperDetail extends CamperSummary {
   images: CamperImage[]
 }
 
+export interface CamperComparison {
+  id: string
+  brand: string
+  model: string
+  year: number | null
+  askingPrice: number | null
+  mileageKm: number | null
+  lengthMeters: number | null
+  sleepingPlaces: number | null
+  transmission: string
+  engine: string
+  chassis: string
+  pricePerMeter: number
+  isFavorite: boolean
+}
+
 export interface ParsedCamper {
   brand: string
   model: string

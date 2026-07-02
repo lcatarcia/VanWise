@@ -65,6 +65,7 @@ public sealed class CampersController(ICamperService camperService, ICamperListi
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<IReadOnlyCollection<CamperComparisonDto>>> Compare([FromQuery] Guid[] ids, CancellationToken cancellationToken)
     {
-        return Ok(await camperService.CompareAsync(ids, cancellationToken));
+        var comparison = await camperService.CompareAsync(ids, cancellationToken);
+        return comparison.Count == ids.Distinct().Count() ? Ok(comparison) : NotFound();
     }
 }

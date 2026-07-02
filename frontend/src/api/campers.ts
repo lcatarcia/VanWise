@@ -1,5 +1,5 @@
 import { http } from './http'
-import type { CamperDetail, CamperSummary, CreateCamperRequest, DashboardStats, ParsedCamper, UpdateCamperRequest } from '../types/camper'
+import type { CamperComparison, CamperDetail, CamperSummary, CreateCamperRequest, DashboardStats, ParsedCamper, UpdateCamperRequest } from '../types/camper'
 
 export async function getCampers() {
   const response = await http.get<CamperSummary[]>('/campers')
@@ -13,6 +13,13 @@ export async function getCamper(id: string) {
 
 export async function getDashboardStats() {
   const response = await http.get<DashboardStats>('/dashboard')
+  return response.data
+}
+
+export async function compareCampers(ids: string[]) {
+  const params = new URLSearchParams()
+  ids.forEach((id) => params.append('ids', id))
+  const response = await http.get<CamperComparison[]>(`/campers/compare?${params.toString()}`)
   return response.data
 }
 

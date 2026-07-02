@@ -133,6 +133,18 @@ public sealed class CamperRepository(VanWiseDbContext dbContext) : ICamperReposi
         dbContext.Tags.RemoveRange(camper.Tags);
     }
 
+    public void ReplaceRemotePhotos(Guid camperId, IEnumerable<string> imageUrls)
+    {
+        dbContext.Attachments.RemoveRange(dbContext.Attachments.Where(attachment => attachment.CamperId == camperId && attachment.IsPhoto));
+
+        var sortOrder = 0;
+        foreach (var imageUrl in imageUrls.Select(url => url.Trim()).Where(url => url.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            dbContext.Attachments.Add(Attachment.RemotePhoto(camperId, imageUrl, sortOrder));
+            sortOrder++;
+        }
+    }
+
     public void Remove(Camper camper)
     {
         dbContext.Campers.Remove(camper);

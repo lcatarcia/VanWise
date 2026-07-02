@@ -11,6 +11,7 @@ public interface ICamperRepository
     Task<IReadOnlyCollection<CamperComparisonDto>> GetComparisonAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken);
     Task<DashboardStatsDto> GetDashboardStatsAsync(CancellationToken cancellationToken);
     void RemoveExistingTags(Camper camper);
+    void ReplaceRemotePhotos(Guid camperId, IEnumerable<string> imageUrls);
     void Add(Camper camper);
     void Remove(Camper camper);
 }

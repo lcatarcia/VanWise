@@ -27,6 +27,7 @@ public sealed class CamperComparisonTests
         public Task<IReadOnlyCollection<CamperComparisonDto>> GetComparisonAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken) => Task.FromResult<IReadOnlyCollection<CamperComparisonDto>>([]);
         public Task<DashboardStatsDto> GetDashboardStatsAsync(CancellationToken cancellationToken) => throw new NotSupportedException();
         public void RemoveExistingTags(Camper camper) => throw new NotSupportedException();
+        public void ReplaceRemotePhotos(Guid camperId, IEnumerable<string> imageUrls) => throw new NotSupportedException();
         public void Add(Camper camper) => throw new NotSupportedException();
         public void Remove(Camper camper) => throw new NotSupportedException();
     }

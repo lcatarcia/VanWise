@@ -41,6 +41,16 @@ export function ComparatorPage() {
     .map((id) => comparisonQuery.data?.find((camper) => camper.id === id))
     .filter((camper): camper is CamperComparison => camper !== undefined)
 
+  function toggleCamper(camper: CamperSummary) {
+    setSelectedCampers((current) => {
+      if (current.some((selected) => selected.id === camper.id)) {
+        return current.filter((selected) => selected.id !== camper.id)
+      }
+
+      return current.length >= 4 ? current : [...current, camper]
+    })
+  }
+
   const rows = [
     { label: 'Prezzo', value: (camper: CamperComparison) => formatCurrency(camper.askingPrice), best: bestValue(orderedComparison, (camper) => camper.askingPrice, 'min') },
     { label: 'Km', value: (camper: CamperComparison) => formatNumber(camper.mileageKm), best: bestValue(orderedComparison, (camper) => camper.mileageKm, 'min') },
@@ -76,6 +86,7 @@ export function ComparatorPage() {
               multiple
               disableCloseOnSelect
               getOptionLabel={(option) => `${option.brand} ${option.model}`}
+              isOptionEqualToValue={(option, value) => option.id === value.id}
               loading={campersQuery.isLoading}
               options={campersQuery.data ?? []}
               value={selectedCampers}
@@ -98,6 +109,35 @@ export function ComparatorPage() {
             )}
             {!canCompare && <Alert severity="info">Seleziona almeno 2 camper per avviare il confronto.</Alert>}
             {comparisonQuery.isError && <Alert severity="error">Impossibile confrontare i camper selezionati. Controlla che siano ancora presenti.</Alert>}
+          </Stack>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent>
+          <Stack spacing={2}>
+            <Typography variant="h6">Camper disponibili</Typography>
+            <Grid container spacing={2}>
+              {(campersQuery.data ?? []).map((camper) => {
+                const isSelected = selectedIds.includes(camper.id)
+                return (
+                  <Grid key={camper.id} size={{ xs: 12, md: 6, xl: 3 }}>
+                    <Box sx={{ bgcolor: isSelected ? 'rgba(123,174,127,.14)' : 'rgba(248,247,244,.05)', border: '1px solid rgba(248,247,244,.10)', borderRadius: 3, p: 2 }}>
+                      <Stack spacing={1}>
+                        <Typography sx={{ fontWeight: 900 }}>{camper.brand} {camper.model}</Typography>
+                        <Typography color="text.secondary" variant="body2">
+                          {formatCurrency(camper.askingPrice)} · {formatNumber(camper.mileageKm)} km
+                        </Typography>
+                        <Button disabled={!isSelected && selectedCampers.length >= 4} size="small" variant={isSelected ? 'contained' : 'outlined'} onClick={() => toggleCamper(camper)}>
+                          {isSelected ? 'Rimuovi dal confronto' : 'Aggiungi al confronto'}
+                        </Button>
+                      </Stack>
+                    </Box>
+                  </Grid>
+                )
+              })}
+            </Grid>
+            {(campersQuery.data ?? []).length === 0 && <Typography color="text.secondary">Aggiungi camper alla sezione Camper per poterli confrontare.</Typography>}
           </Stack>
         </CardContent>
       </Card>

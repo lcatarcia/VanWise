@@ -36,6 +36,7 @@ public sealed class CamperRepository(VanWiseDbContext dbContext) : ICamperReposi
     {
         return dbContext.Campers
             .Include(camper => camper.Tags)
+            .Include(camper => camper.Attachments)
             .FirstOrDefaultAsync(camper => camper.Id == id, cancellationToken);
     }
 

@@ -2,9 +2,9 @@ import AnalyticsOutlinedIcon from '@mui/icons-material/AnalyticsOutlined'
 import ChecklistOutlinedIcon from '@mui/icons-material/ChecklistOutlined'
 import CompareArrowsOutlinedIcon from '@mui/icons-material/CompareArrowsOutlined'
 import DirectionsCarFilledOutlinedIcon from '@mui/icons-material/DirectionsCarFilledOutlined'
-import FilterAltOutlinedIcon from '@mui/icons-material/FilterAltOutlined'
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 import PaymentsOutlinedIcon from '@mui/icons-material/PaymentsOutlined'
-import { Box, Checkbox, Divider, Drawer, List, ListItemButton, ListItemIcon, ListItemText, Stack, Typography } from '@mui/material'
+import { Box, Divider, Drawer, List, ListItemButton, ListItemIcon, ListItemText, Stack, Typography } from '@mui/material'
 import { NavLink, Outlet } from 'react-router-dom'
 import { VanWiseMark } from '../components/VanWiseMark'
 
@@ -16,7 +16,7 @@ const navigation = [
   { label: 'Checklist', path: '/checklist', icon: <ChecklistOutlinedIcon /> },
 ]
 
-const filterFields = ['Marca', 'Modello', 'Prezzo', 'Km', 'Lunghezza', 'Regione', 'Città', 'Rivenditore', 'Tag']
+const featureHints = ['Catalogo camper salvati', 'Comparatore 2-4 mezzi', 'Simulatore finanziamenti', 'Checklist visita']
 
 export function AppLayout() {
   return (
@@ -74,13 +74,13 @@ export function AppLayout() {
           <Divider sx={{ borderColor: 'rgba(248,247,244,.12)' }} />
           <Stack spacing={1} sx={{ bgcolor: 'rgba(248,247,244,.05)', border: '1px solid rgba(248,247,244,.10)', borderRadius: 4, p: 2 }}>
             <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-              <FilterAltOutlinedIcon fontSize="small" />
-              <Typography sx={{ fontWeight: 800 }}>Campi filtro</Typography>
+              <InfoOutlinedIcon fontSize="small" />
+              <Typography sx={{ fontWeight: 800 }}>Strumenti VanWise</Typography>
             </Stack>
             <Stack spacing={0.25}>
-              {filterFields.map((field, index) => (
+              {featureHints.map((field) => (
                 <Box key={field} sx={{ alignItems: 'center', display: 'flex', gap: 0.5 }}>
-                  <Checkbox checked={index < 4} size="small" sx={{ color: 'rgba(248,247,244,.45)', p: 0.25 }} />
+                  <Box sx={{ bgcolor: 'secondary.main', borderRadius: '50%', height: 6, width: 6 }} />
                   <Typography color="text.secondary" variant="body2">{field}</Typography>
                 </Box>
               ))}

@@ -31,6 +31,7 @@ import { Link } from 'react-router-dom'
 import { z } from 'zod'
 import { createCamper, getCamper, getCampers, parseCamperUrl, updateCamper } from '../api/campers'
 import { TrendIcon } from '../components/TrendIcon'
+import { VanWiseMark } from '../components/VanWiseMark'
 import type { CamperDetail, CreateCamperRequest } from '../types/camper'
 import type { CamperSummary } from '../types/camper'
 
@@ -60,8 +61,35 @@ function parseOptionalNumber(value: unknown) {
 const optionalNumber = z.number().nullable()
 const textFieldSlotProps = { inputLabel: { shrink: true } } as const
 
+function CamperThumbnail({ camper }: { camper: CamperSummary }) {
+  const [imageFailed, setImageFailed] = useState(false)
+  const showImage = camper.coverImageUrl && !imageFailed
+
+  return (
+    <Box sx={{ alignItems: 'center', bgcolor: 'rgba(248,247,244,.06)', border: '1px solid rgba(248,247,244,.12)', borderRadius: 2, display: 'flex', height: 58, justifyContent: 'center', overflow: 'hidden', width: 86 }}>
+      {showImage
+        ? <Box alt={`${camper.brand} ${camper.model}`} component="img" src={camper.coverImageUrl ?? undefined} sx={{ height: '100%', objectFit: 'cover', width: '100%' }} onError={() => setImageFailed(true)} />
+        : <VanWiseMark compact />}
+    </Box>
+  )
+}
+
 const columns = [
-  columnHelper.accessor((row) => `${row.brand} ${row.model}`, { id: 'model', header: 'Camper' }),
+  columnHelper.display({
+    id: 'cover',
+    header: 'Foto',
+    cell: (info) => <CamperThumbnail camper={info.row.original} />,
+  }),
+  columnHelper.accessor((row) => `${row.brand} ${row.model}`, {
+    id: 'model',
+    header: 'Camper',
+    cell: (info) => (
+      <>
+        <TrendIcon direction={info.row.original.isFavorite ? 'up' : 'down'} />{' '}
+        {info.getValue()}
+      </>
+    ),
+  }),
   columnHelper.accessor('year', { header: 'Anno' }),
   columnHelper.accessor('askingPrice', {
     header: 'Prezzo',
@@ -426,7 +454,6 @@ export function CampersPage() {
                   <TableRow key={row.id} sx={{ '&:nth-of-type(even)': { bgcolor: 'rgba(248,247,244,.04)' }, '&:hover': { bgcolor: 'rgba(123,174,127,.10)' } }}>
                     {row.getVisibleCells().map((cell, index) => (
                       <TableCell key={cell.id} sx={{ fontWeight: index === 0 ? 700 : 500 }}>
-                        {index === 0 && <TrendIcon direction={row.original.isFavorite ? 'up' : 'down'} />}{' '}
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </TableCell>
                     ))}

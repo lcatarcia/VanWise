@@ -13,6 +13,41 @@ const financingLabels: Record<FinancingType, string> = {
   rentToBuy: 'Noleggio con riscatto',
 }
 
+const productProfiles: Record<FinancingType, { downPaymentRate: number, finalPaymentRate: number, tanPercent: number, taegPercent: number, termMonths: number, note: string }> = {
+  financing: {
+    downPaymentRate: 0.15,
+    finalPaymentRate: 0,
+    tanPercent: 6.5,
+    taegPercent: 7.2,
+    termMonths: 60,
+    note: 'Acquisto classico: anticipo, rate costanti e nessuna maxi rata finale.',
+  },
+  leasing: {
+    downPaymentRate: 0.10,
+    finalPaymentRate: 0.25,
+    tanPercent: 5.9,
+    taegPercent: 6.8,
+    termMonths: 48,
+    note: 'Leasing: rata piu leggera grazie a una quota finale piu alta.',
+  },
+  buyBack: {
+    downPaymentRate: 0.20,
+    finalPaymentRate: 0.35,
+    tanPercent: 6.9,
+    taegPercent: 7.8,
+    termMonths: 36,
+    note: 'Buy back: durata piu breve e valore finale rilevante da riscattare o rifinanziare.',
+  },
+  rentToBuy: {
+    downPaymentRate: 0.05,
+    finalPaymentRate: 0.15,
+    tanPercent: 7.5,
+    taegPercent: 8.6,
+    termMonths: 72,
+    note: 'Noleggio con riscatto: anticipo basso, durata lunga e riscatto finale.',
+  },
+}
+
 const defaultInput: FinancingScenarioInput = {
   vehiclePrice: 70000,
   downPayment: 10000,
@@ -65,7 +100,7 @@ export function FinancingPage() {
   const [input, setInput] = useState<FinancingScenarioInput>(defaultInput)
   const errors = validateInput(input)
   const hasErrors = Object.values(errors).some(Boolean)
-  const scenarios = useMemo(() => [36, 60, 84].map((termMonths) => {
+  const scenarios = useMemo(() => [input.termMonths, input.termMonths + 24, input.termMonths + 48].filter((termMonths, index, terms) => termMonths <= 240 && terms.indexOf(termMonths) === index).map((termMonths) => {
     const scenarioInput = { ...input, termMonths }
     return { termMonths, result: calculateScenario(scenarioInput) }
   }), [input])
@@ -73,6 +108,7 @@ export function FinancingPage() {
   const selectedCamperHelper = selectedCamper === undefined
     ? 'Inserisci prezzo o scegli un camper'
     : `Da ${selectedCamper.brand} ${selectedCamper.model}`
+  const productProfile = productProfiles[input.type]
 
   function updateNumber(field: keyof FinancingScenarioInput, value: string) {
     setInput((current) => ({ ...current, [field]: parseNumber(value) }))
@@ -82,8 +118,30 @@ export function FinancingPage() {
     setSelectedCamperId(camperId)
     const camper = campersQuery.data?.find((candidate) => candidate.id === camperId)
     if (camper?.askingPrice !== null && camper?.askingPrice !== undefined) {
-      setInput((current) => ({ ...current, vehiclePrice: camper.askingPrice ?? current.vehiclePrice }))
+      setInput((current) => {
+        const vehiclePrice = camper.askingPrice ?? current.vehiclePrice
+        const profile = productProfiles[current.type]
+        return {
+          ...current,
+          vehiclePrice,
+          downPayment: Math.round(vehiclePrice * profile.downPaymentRate),
+          finalPayment: Math.round(vehiclePrice * profile.finalPaymentRate),
+        }
+      })
     }
+  }
+
+  function selectProduct(type: FinancingType) {
+    const profile = productProfiles[type]
+    setInput((current) => ({
+      ...current,
+      type,
+      downPayment: Math.round(current.vehiclePrice * profile.downPaymentRate),
+      finalPayment: Math.round(current.vehiclePrice * profile.finalPaymentRate),
+      tanPercent: profile.tanPercent,
+      taegPercent: profile.taegPercent,
+      termMonths: profile.termMonths,
+    }))
   }
 
   return (
@@ -129,7 +187,7 @@ export function FinancingPage() {
                 exclusive
                 fullWidth
                 value={input.type}
-                onChange={(_, value: FinancingType | null) => value && setInput((current) => ({ ...current, type: value }))}
+                onChange={(_, value: FinancingType | null) => value && selectProduct(value)}
               >
                 {Object.entries(financingLabels).map(([value, label]) => (
                   <ToggleButton key={value} value={value}>{label}</ToggleButton>
@@ -155,6 +213,7 @@ export function FinancingPage() {
               <TextField fullWidth error={!!errors.taegPercent} helperText={errors.taegPercent || (input.taegPercent < input.tanPercent ? 'TAEG inferiore al TAN: verifica il dato.' : 'Tasso annuo effettivo globale')} label="TAEG %" slotProps={{ inputLabel: { shrink: true } }} value={input.taegPercent} onChange={(event) => updateNumber('taegPercent', event.target.value)} />
             </Grid>
           </Grid>
+          <Alert severity="info" sx={{ mt: 2 }}>{productProfile.note}</Alert>
         </CardContent>
       </Card>
 

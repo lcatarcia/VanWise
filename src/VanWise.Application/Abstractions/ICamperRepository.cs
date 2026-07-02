@@ -10,6 +10,7 @@ public interface ICamperRepository
     Task<Camper?> GetByIdAsync(Guid id, CancellationToken cancellationToken);
     Task<IReadOnlyCollection<CamperComparisonDto>> GetComparisonAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken);
     Task<DashboardStatsDto> GetDashboardStatsAsync(CancellationToken cancellationToken);
+    void RemoveExistingTagsAndPhotos(Camper camper);
     void Add(Camper camper);
     void Remove(Camper camper);
 }

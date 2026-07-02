@@ -128,6 +128,12 @@ public sealed class CamperRepository(VanWiseDbContext dbContext) : ICamperReposi
         dbContext.Campers.Add(camper);
     }
 
+    public void RemoveExistingTagsAndPhotos(Camper camper)
+    {
+        dbContext.Tags.RemoveRange(camper.Tags);
+        dbContext.Attachments.RemoveRange(camper.Attachments.Where(attachment => attachment.IsPhoto));
+    }
+
     public void Remove(Camper camper)
     {
         dbContext.Campers.Remove(camper);

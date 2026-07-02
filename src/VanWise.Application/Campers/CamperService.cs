@@ -42,6 +42,7 @@ public sealed class CamperService(
             request.IsFavorite);
 
         camper.ReplaceTags(request.Tags ?? []);
+        camper.ReplaceRemotePhotos(request.ImageUrls ?? []);
         camperRepository.Add(camper);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
@@ -77,6 +78,7 @@ public sealed class CamperService(
             request.IsFavorite);
 
         camper.ReplaceTags(request.Tags ?? []);
+        camper.ReplaceRemotePhotos(request.ImageUrls ?? []);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return await camperRepository.GetDetailAsync(id, cancellationToken);

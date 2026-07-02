@@ -39,6 +39,11 @@ namespace VanWise.Persistence.Migrations
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset");
 
+                    b.Property<string>("Caption")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
                     b.Property<string>("FileName")
                         .IsRequired()
                         .HasMaxLength(260)
@@ -49,8 +54,11 @@ namespace VanWise.Persistence.Migrations
 
                     b.Property<string>("StoragePath")
                         .IsRequired()
-                        .HasMaxLength(600)
-                        .HasColumnType("nvarchar(600)");
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
                         .HasColumnType("datetimeoffset");
@@ -58,6 +66,8 @@ namespace VanWise.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CamperId");
+
+                    b.HasIndex("CamperId", "SortOrder");
 
                     b.ToTable("Attachments");
                 });

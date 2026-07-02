@@ -7,7 +7,7 @@ namespace VanWise.Api.Controllers;
 [ApiController]
 [ApiVersion(1.0)]
 [Route("api/v{version:apiVersion}/campers")]
-public sealed class CampersController(ICamperService camperService) : ControllerBase
+public sealed class CampersController(ICamperService camperService, ICamperListingParser camperListingParser) : ControllerBase
 {
     [HttpGet]
     [ProducesResponseType<IReadOnlyCollection<CamperSummaryDto>>(StatusCodes.Status200OK)]
@@ -32,6 +32,14 @@ public sealed class CampersController(ICamperService camperService) : Controller
     {
         var camper = await camperService.CreateAsync(request, cancellationToken);
         return CreatedAtAction(nameof(Get), new { id = camper.Id, version = "1.0" }, camper);
+    }
+
+    [HttpPost("parse-url")]
+    [ProducesResponseType<ParsedCamperDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<ParsedCamperDto>> ParseUrl(ParseCamperUrlRequest request, CancellationToken cancellationToken)
+    {
+        return Ok(await camperListingParser.ParseAsync(request, cancellationToken));
     }
 
     [HttpPut("{id:guid}")]

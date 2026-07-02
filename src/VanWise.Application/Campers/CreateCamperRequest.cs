@@ -16,4 +16,5 @@ public sealed record CreateCamperRequest(
     string Notes,
     string SourceUrl,
     bool IsFavorite,
-    IReadOnlyCollection<string> Tags);
+    IReadOnlyCollection<string> Tags,
+    IReadOnlyCollection<string> ImageUrls);

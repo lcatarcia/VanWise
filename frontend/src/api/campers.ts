@@ -1,5 +1,5 @@
 import { http } from './http'
-import type { CamperDetail, CamperSummary, CreateCamperRequest, DashboardStats, UpdateCamperRequest } from '../types/camper'
+import type { CamperDetail, CamperSummary, CreateCamperRequest, DashboardStats, ParsedCamper, UpdateCamperRequest } from '../types/camper'
 
 export async function getCampers() {
   const response = await http.get<CamperSummary[]>('/campers')
@@ -17,11 +17,16 @@ export async function getDashboardStats() {
 }
 
 export async function createCamper(request: CreateCamperRequest) {
-  const response = await http.post('/campers', request)
+  const response = await http.post<CamperDetail>('/campers', request)
   return response.data
 }
 
 export async function updateCamper(id: string, request: UpdateCamperRequest) {
-  const response = await http.put(`/campers/${id}`, request)
+  const response = await http.put<CamperDetail>(`/campers/${id}`, request)
+  return response.data
+}
+
+export async function parseCamperUrl(url: string) {
+  const response = await http.post<ParsedCamper>('/campers/parse-url', { url })
   return response.data
 }

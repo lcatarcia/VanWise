@@ -1,6 +1,6 @@
 namespace VanWise.Application.Campers;
 
-public sealed record UpdateCamperRequest(
+public sealed record ParsedCamperDto(
     string Brand,
     string Model,
     int? Year,
@@ -15,6 +15,4 @@ public sealed record UpdateCamperRequest(
     string City,
     string Notes,
     string SourceUrl,
-    bool IsFavorite,
-    IReadOnlyCollection<string> Tags,
     IReadOnlyCollection<string> ImageUrls);

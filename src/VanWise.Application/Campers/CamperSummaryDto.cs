@@ -12,4 +12,5 @@ public sealed record CamperSummaryDto(
     string City,
     string? DealerName,
     bool IsFavorite,
+    string? CoverImageUrl,
     decimal PricePerMeter);

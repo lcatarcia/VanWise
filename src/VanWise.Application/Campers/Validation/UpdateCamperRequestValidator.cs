@@ -15,16 +15,8 @@ public sealed class UpdateCamperRequestValidator : CamperRequestValidatorBase<Up
             request => request.LengthMeters,
             request => request.SleepingPlaces,
             request => request.Region,
-            request => request.City);
-
-        RuleFor(request => request.SourceUrl)
-            .MaximumLength(1000)
-            .Must(BeEmptyOrAbsoluteUrl)
-            .WithMessage("Source URL must be a valid absolute URL.");
-    }
-
-    private static bool BeEmptyOrAbsoluteUrl(string sourceUrl)
-    {
-        return string.IsNullOrWhiteSpace(sourceUrl) || Uri.TryCreate(sourceUrl, UriKind.Absolute, out _);
+            request => request.City,
+            request => request.SourceUrl,
+            request => request.ImageUrls);
     }
 }

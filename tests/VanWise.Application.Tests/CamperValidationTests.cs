@@ -26,7 +26,8 @@ public sealed class CamperValidationTests
             "Well equipped",
             "https://example.com/hymer",
             true,
-            ["garage", "solar"]);
+            ["garage", "solar"],
+            ["https://example.com/hymer.jpg"]);
 
         var validator = new CreateCamperRequestValidator();
 
@@ -54,6 +55,7 @@ public sealed class CamperValidationTests
             string.Empty,
             string.Empty,
             false,
+            [],
             []);
 
         var validator = new CreateCamperRequestValidator();
@@ -82,6 +84,7 @@ public sealed class CamperValidationTests
             string.Empty,
             string.Empty,
             false,
+            [],
             []);
 
         var validator = new CreateCamperRequestValidator();

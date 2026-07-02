@@ -10,7 +10,15 @@ export interface CamperSummary {
   city: string
   dealerName?: string
   isFavorite: boolean
+  coverImageUrl?: string | null
   pricePerMeter: number
+}
+
+export interface CamperImage {
+  url: string
+  fileName: string
+  caption: string
+  sortOrder: number
 }
 
 export interface CreateCamperRequest {
@@ -30,6 +38,7 @@ export interface CreateCamperRequest {
   sourceUrl: string
   isFavorite: boolean
   tags: string[]
+  imageUrls: string[]
 }
 
 export interface UpdateCamperRequest extends CreateCamperRequest {}
@@ -42,6 +51,25 @@ export interface CamperDetail extends CamperSummary {
   notes: string
   sourceUrl: string
   tags: string[]
+  images: CamperImage[]
+}
+
+export interface ParsedCamper {
+  brand: string
+  model: string
+  year: number | null
+  askingPrice: number | null
+  mileageKm: number | null
+  lengthMeters: number | null
+  transmission: string
+  engine: string
+  chassis: string
+  sleepingPlaces: number | null
+  region: string
+  city: string
+  notes: string
+  sourceUrl: string
+  imageUrls: string[]
 }
 
 export interface DistributionPoint {

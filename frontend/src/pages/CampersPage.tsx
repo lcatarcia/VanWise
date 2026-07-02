@@ -1,12 +1,15 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import AddBoxOutlinedIcon from '@mui/icons-material/AddBoxOutlined'
+import AutoFixHighOutlinedIcon from '@mui/icons-material/AutoFixHighOutlined'
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined'
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined'
 import {
   Alert,
   Box,
   Button,
   Card,
   CardContent,
+  CardMedia,
   Chip,
   FormControlLabel,
   Grid,
@@ -24,8 +27,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createColumnHelper, flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table'
 import { useState, type KeyboardEvent } from 'react'
 import { Controller, useForm } from 'react-hook-form'
+import { Link } from 'react-router-dom'
 import { z } from 'zod'
-import { createCamper, getCamper, getCampers, updateCamper } from '../api/campers'
+import { createCamper, getCamper, getCampers, parseCamperUrl, updateCamper } from '../api/campers'
 import { TrendIcon } from '../components/TrendIcon'
 import type { CamperDetail, CreateCamperRequest } from '../types/camper'
 import type { CamperSummary } from '../types/camper'
@@ -54,6 +58,7 @@ function parseOptionalNumber(value: unknown) {
 }
 
 const optionalNumber = z.number().nullable()
+const textFieldSlotProps = { inputLabel: { shrink: true } } as const
 
 const columns = [
   columnHelper.accessor((row) => `${row.brand} ${row.model}`, { id: 'model', header: 'Camper' }),
@@ -136,6 +141,7 @@ export function CampersPage() {
   const queryClient = useQueryClient()
   const [tagInput, setTagInput] = useState('')
   const [tags, setTags] = useState<string[]>([])
+  const [imageUrls, setImageUrls] = useState<string[]>([])
   const [editingCamperId, setEditingCamperId] = useState<string | null>(null)
   const [loadingCamperId, setLoadingCamperId] = useState<string | null>(null)
   const [loadError, setLoadError] = useState(false)
@@ -150,10 +156,34 @@ export function CampersPage() {
       await queryClient.invalidateQueries({ queryKey: ['dashboard'] })
     },
   })
+  const parseMutation = useMutation({
+    mutationFn: parseCamperUrl,
+    onSuccess: (parsedCamper) => {
+      form.reset({
+        brand: parsedCamper.brand,
+        model: parsedCamper.model,
+        year: parsedCamper.year,
+        askingPrice: parsedCamper.askingPrice,
+        mileageKm: parsedCamper.mileageKm,
+        lengthMeters: parsedCamper.lengthMeters,
+        transmission: parsedCamper.transmission,
+        engine: parsedCamper.engine,
+        chassis: parsedCamper.chassis,
+        sleepingPlaces: parsedCamper.sleepingPlaces,
+        region: parsedCamper.region,
+        city: parsedCamper.city,
+        notes: parsedCamper.notes,
+        sourceUrl: parsedCamper.sourceUrl,
+        isFavorite: form.getValues('isFavorite'),
+      })
+      setImageUrls(parsedCamper.imageUrls)
+    },
+  })
 
   function resetForm() {
     form.reset(defaultValues)
     setTags([])
+    setImageUrls([])
     setTagInput('')
     setEditingCamperId(null)
     setLoadError(false)
@@ -170,9 +200,20 @@ export function CampersPage() {
     const request: CreateCamperRequest = {
       ...values,
       tags: submittedTags,
+      imageUrls,
     }
 
     mutation.mutate(request)
+  }
+
+  function parseCurrentUrl() {
+    const sourceUrl = form.getValues('sourceUrl').trim()
+    if (sourceUrl.length === 0) {
+      form.setError('sourceUrl', { message: 'Inserisci una URL da parsare.' })
+      return
+    }
+
+    parseMutation.mutate(sourceUrl)
   }
 
   async function editCamper(camper: CamperSummary) {
@@ -187,6 +228,7 @@ export function CampersPage() {
 
       form.reset(toFormValues(detail))
       setTags([...detail.tags])
+      setImageUrls(detail.images.map((image) => image.url))
       setTagInput('')
       setEditingCamperId(detail.id)
       window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -233,48 +275,74 @@ export function CampersPage() {
             <Typography variant="h6">{editingCamperId === null ? 'Nuovo camper' : 'Modifica camper'}</Typography>
             {loadError && <Alert severity="error">Impossibile caricare il camper selezionato. Riprova.</Alert>}
             {mutation.isError && <Alert severity="error">Impossibile salvare il camper. Controlla i dati e riprova.</Alert>}
+            {parseMutation.isError && <Alert severity="error">Impossibile parsare la URL. Controlla che la pagina sia pubblica e riprova.</Alert>}
+            <Card sx={{ bgcolor: 'rgba(123,174,127,.08)', border: '1px solid rgba(123,174,127,.22)' }}>
+              <CardContent>
+                <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ alignItems: { xs: 'stretch', md: 'flex-start' } }}>
+                  <TextField
+                    fullWidth
+                    label="Inserisci solo la URL annuncio"
+                    placeholder="https://..."
+                    slotProps={textFieldSlotProps}
+                    {...form.register('sourceUrl')}
+                    error={!!form.formState.errors.sourceUrl}
+                    helperText={form.formState.errors.sourceUrl?.message ?? 'VanWise proverà a compilare dati e foto automaticamente.'}
+                  />
+                  <Button
+                    startIcon={<AutoFixHighOutlinedIcon />}
+                    type="button"
+                    variant="contained"
+                    onClick={parseCurrentUrl}
+                    disabled={parseMutation.isPending}
+                    sx={{ minWidth: { md: 190 } }}
+                  >
+                    {parseMutation.isPending ? 'Parsing...' : 'Compila da URL'}
+                  </Button>
+                </Stack>
+              </CardContent>
+            </Card>
             <Grid container spacing={2}>
               <Grid size={{ xs: 12, md: 4 }}>
-                <TextField fullWidth label="Marca" {...form.register('brand')} error={!!form.formState.errors.brand} helperText={form.formState.errors.brand?.message} />
+                <TextField fullWidth label="Marca" slotProps={textFieldSlotProps} {...form.register('brand')} error={!!form.formState.errors.brand} helperText={form.formState.errors.brand?.message} />
               </Grid>
               <Grid size={{ xs: 12, md: 4 }}>
-                <TextField fullWidth label="Modello" {...form.register('model')} error={!!form.formState.errors.model} helperText={form.formState.errors.model?.message} />
+                <TextField fullWidth label="Modello" slotProps={textFieldSlotProps} {...form.register('model')} error={!!form.formState.errors.model} helperText={form.formState.errors.model?.message} />
               </Grid>
               <Grid size={{ xs: 12, md: 4 }}>
-                <TextField fullWidth label="URL annuncio" placeholder="https://..." {...form.register('sourceUrl')} error={!!form.formState.errors.sourceUrl} helperText={form.formState.errors.sourceUrl?.message ?? 'Opzionale: pagina web da cui hai preso i dati'} />
+                <TextField fullWidth label="URL annuncio" placeholder="https://..." slotProps={textFieldSlotProps} {...form.register('sourceUrl')} error={!!form.formState.errors.sourceUrl} helperText={form.formState.errors.sourceUrl?.message ?? 'Opzionale: pagina web da cui hai preso i dati'} />
               </Grid>
               <Grid size={{ xs: 12, md: 3 }}>
-                <TextField fullWidth label="Anno" type="number" {...form.register('year', { setValueAs: parseOptionalNumber })} error={!!form.formState.errors.year} helperText={form.formState.errors.year?.message} />
+                <TextField fullWidth label="Anno" slotProps={textFieldSlotProps} type="number" {...form.register('year', { setValueAs: parseOptionalNumber })} error={!!form.formState.errors.year} helperText={form.formState.errors.year?.message} />
               </Grid>
               <Grid size={{ xs: 12, md: 3 }}>
-                <TextField fullWidth label="Prezzo" type="number" {...form.register('askingPrice', { setValueAs: parseOptionalNumber })} error={!!form.formState.errors.askingPrice} helperText={form.formState.errors.askingPrice?.message} />
+                <TextField fullWidth label="Prezzo" slotProps={textFieldSlotProps} type="number" {...form.register('askingPrice', { setValueAs: parseOptionalNumber })} error={!!form.formState.errors.askingPrice} helperText={form.formState.errors.askingPrice?.message} />
               </Grid>
               <Grid size={{ xs: 12, md: 3 }}>
-                <TextField fullWidth label="Km" type="number" {...form.register('mileageKm', { setValueAs: parseOptionalNumber })} error={!!form.formState.errors.mileageKm} helperText={form.formState.errors.mileageKm?.message} />
+                <TextField fullWidth label="Km" slotProps={textFieldSlotProps} type="number" {...form.register('mileageKm', { setValueAs: parseOptionalNumber })} error={!!form.formState.errors.mileageKm} helperText={form.formState.errors.mileageKm?.message} />
               </Grid>
               <Grid size={{ xs: 12, md: 3 }}>
-                <TextField fullWidth label="Lunghezza (m)" inputMode="decimal" placeholder="6,5" {...form.register('lengthMeters', { setValueAs: parseOptionalNumber })} error={!!form.formState.errors.lengthMeters} helperText={form.formState.errors.lengthMeters?.message} />
+                <TextField fullWidth label="Lunghezza (m)" inputMode="decimal" placeholder="6,5" slotProps={textFieldSlotProps} {...form.register('lengthMeters', { setValueAs: parseOptionalNumber })} error={!!form.formState.errors.lengthMeters} helperText={form.formState.errors.lengthMeters?.message} />
               </Grid>
               <Grid size={{ xs: 12, md: 3 }}>
-                <TextField fullWidth label="Cambio" {...form.register('transmission')} />
+                <TextField fullWidth label="Cambio" slotProps={textFieldSlotProps} {...form.register('transmission')} />
               </Grid>
               <Grid size={{ xs: 12, md: 3 }}>
-                <TextField fullWidth label="Motore" {...form.register('engine')} />
+                <TextField fullWidth label="Motore" slotProps={textFieldSlotProps} {...form.register('engine')} />
               </Grid>
               <Grid size={{ xs: 12, md: 3 }}>
-                <TextField fullWidth label="Telaio" {...form.register('chassis')} />
+                <TextField fullWidth label="Telaio" slotProps={textFieldSlotProps} {...form.register('chassis')} />
               </Grid>
               <Grid size={{ xs: 12, md: 3 }}>
-                <TextField fullWidth label="Posti letto" type="number" {...form.register('sleepingPlaces', { setValueAs: parseOptionalNumber })} error={!!form.formState.errors.sleepingPlaces} helperText={form.formState.errors.sleepingPlaces?.message} />
+                <TextField fullWidth label="Posti letto" slotProps={textFieldSlotProps} type="number" {...form.register('sleepingPlaces', { setValueAs: parseOptionalNumber })} error={!!form.formState.errors.sleepingPlaces} helperText={form.formState.errors.sleepingPlaces?.message} />
               </Grid>
               <Grid size={{ xs: 12, md: 4 }}>
-                <TextField fullWidth label="Regione" {...form.register('region')} error={!!form.formState.errors.region} helperText={form.formState.errors.region?.message} />
+                <TextField fullWidth label="Regione" slotProps={textFieldSlotProps} {...form.register('region')} error={!!form.formState.errors.region} helperText={form.formState.errors.region?.message} />
               </Grid>
               <Grid size={{ xs: 12, md: 4 }}>
-                <TextField fullWidth label="Città" {...form.register('city')} error={!!form.formState.errors.city} helperText={form.formState.errors.city?.message} />
+                <TextField fullWidth label="Città" slotProps={textFieldSlotProps} {...form.register('city')} error={!!form.formState.errors.city} helperText={form.formState.errors.city?.message} />
               </Grid>
               <Grid size={{ xs: 12, md: 4 }}>
-                <TextField fullWidth label="Tag" placeholder="Scrivi un tag e premi Invio" value={tagInput} onBlur={addTag} onChange={(event) => setTagInput(event.target.value)} onKeyDown={handleTagKeyDown} />
+                <TextField fullWidth label="Tag" placeholder="Scrivi un tag e premi Invio" slotProps={textFieldSlotProps} value={tagInput} onBlur={addTag} onChange={(event) => setTagInput(event.target.value)} onKeyDown={handleTagKeyDown} />
                 {tags.length > 0 && (
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1 }}>
                     {tags.map((tag) => (
@@ -296,8 +364,27 @@ export function CampersPage() {
                 />
               </Grid>
               <Grid size={{ xs: 12 }}>
-                <TextField fullWidth multiline minRows={3} label="Note" {...form.register('notes')} />
+                <TextField fullWidth multiline minRows={3} label="Note" slotProps={textFieldSlotProps} {...form.register('notes')} />
               </Grid>
+              {imageUrls.length > 0 && (
+                <Grid size={{ xs: 12 }}>
+                  <Typography sx={{ mb: 1, fontWeight: 800 }}>Foto estratte dalla URL</Typography>
+                  <Grid container spacing={2}>
+                    {imageUrls.map((imageUrl) => (
+                      <Grid key={imageUrl} size={{ xs: 12, sm: 6, md: 3 }}>
+                        <Card sx={{ overflow: 'hidden' }}>
+                          <CardMedia component="img" image={imageUrl} sx={{ aspectRatio: '16 / 10', objectFit: 'cover' }} />
+                          <CardContent sx={{ p: 1 }}>
+                            <Button color="error" fullWidth size="small" type="button" variant="text" onClick={() => setImageUrls((current) => current.filter((url) => url !== imageUrl))}>
+                              Rimuovi
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                    ))}
+                  </Grid>
+                </Grid>
+              )}
             </Grid>
             <Box>
               <Button type="submit" variant="contained" disabled={mutation.isPending}>
@@ -344,15 +431,26 @@ export function CampersPage() {
                       </TableCell>
                     ))}
                     <TableCell>
-                      <Button
-                        size="small"
-                        startIcon={<EditOutlinedIcon />}
-                        variant="outlined"
-                        onClick={() => void editCamper(row.original)}
-                        disabled={mutation.isPending || loadingCamperId === row.original.id}
-                      >
-                        {loadingCamperId === row.original.id ? 'Carico...' : 'Modifica'}
-                      </Button>
+                      <Stack direction="row" spacing={1}>
+                        <Button
+                          component={Link}
+                          size="small"
+                          startIcon={<VisibilityOutlinedIcon />}
+                          to={`/campers/${row.original.id}`}
+                          variant="outlined"
+                        >
+                          Dettaglio
+                        </Button>
+                        <Button
+                          size="small"
+                          startIcon={<EditOutlinedIcon />}
+                          variant="outlined"
+                          onClick={() => void editCamper(row.original)}
+                          disabled={mutation.isPending || loadingCamperId === row.original.id}
+                        >
+                          {loadingCamperId === row.original.id ? 'Carico...' : 'Modifica'}
+                        </Button>
+                      </Stack>
                     </TableCell>
                   </TableRow>
                 ))}

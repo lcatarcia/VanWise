@@ -14,13 +14,16 @@ public abstract class CamperRequestValidatorBase<T> : AbstractValidator<T>
         Expression<Func<T, decimal?>> lengthMeters,
         Expression<Func<T, int?>> sleepingPlaces,
         Expression<Func<T, string>> region,
-        Expression<Func<T, string>> city)
+        Expression<Func<T, string>> city,
+        Expression<Func<T, string>> sourceUrl,
+        Expression<Func<T, IReadOnlyCollection<string>>> imageUrls)
     {
         var yearValue = year.Compile();
         var askingPriceValue = askingPrice.Compile();
         var mileageKmValue = mileageKm.Compile();
         var lengthMetersValue = lengthMeters.Compile();
         var sleepingPlacesValue = sleepingPlaces.Compile();
+        var imageUrlsValue = imageUrls.Compile();
 
         RuleFor(brand).NotEmpty().MaximumLength(100);
         RuleFor(model).NotEmpty().MaximumLength(120);
@@ -31,5 +34,21 @@ public abstract class CamperRequestValidatorBase<T> : AbstractValidator<T>
         RuleFor(sleepingPlaces).InclusiveBetween(1, 10).When(request => sleepingPlacesValue(request) is not null);
         RuleFor(region).MaximumLength(80);
         RuleFor(city).MaximumLength(80);
+        RuleFor(sourceUrl)
+            .MaximumLength(1000)
+            .Must(BeEmptyOrHttpUrl)
+            .WithMessage("Source URL must be a valid HTTP or HTTPS URL.");
+        RuleFor(imageUrls)
+            .Must(requestImageUrls => requestImageUrls is not null && requestImageUrls.Count <= 20)
+            .WithMessage("A camper can have at most 20 images.");
+        RuleFor(request => imageUrlsValue(request))
+            .Must(requestImageUrls => requestImageUrls is null || requestImageUrls.All(url => url.Length <= 1000 && BeEmptyOrHttpUrl(url)))
+            .WithMessage("Image URL must be a valid HTTP or HTTPS URL.");
+    }
+
+    protected static bool BeEmptyOrHttpUrl(string? url)
+    {
+        return string.IsNullOrWhiteSpace(url)
+            || Uri.TryCreate(url, UriKind.Absolute, out var uri) && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
     }
 }

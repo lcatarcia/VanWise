@@ -109,6 +109,20 @@ public sealed class Camper : Entity
         MarkUpdated();
     }
 
+    public void ReplaceRemotePhotos(IEnumerable<string> imageUrls)
+    {
+        _attachments.RemoveAll(attachment => attachment.IsPhoto);
+
+        var sortOrder = 0;
+        foreach (var imageUrl in imageUrls.Select(Normalize).Where(url => url.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            _attachments.Add(Attachment.RemotePhoto(Id, imageUrl, sortOrder));
+            sortOrder++;
+        }
+
+        MarkUpdated();
+    }
+
     private static string Normalize(string? value)
     {
         return value?.Trim() ?? string.Empty;

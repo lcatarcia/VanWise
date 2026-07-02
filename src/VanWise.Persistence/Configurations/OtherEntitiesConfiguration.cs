@@ -14,7 +14,9 @@ public sealed class AttachmentConfiguration : IEntityTypeConfiguration<Attachmen
     {
         builder.Property(attachment => attachment.FileName).HasMaxLength(260).IsRequired();
         builder.Property(attachment => attachment.ContentType).HasMaxLength(120).IsRequired();
-        builder.Property(attachment => attachment.StoragePath).HasMaxLength(600).IsRequired();
+        builder.Property(attachment => attachment.StoragePath).HasMaxLength(1000).IsRequired();
+        builder.Property(attachment => attachment.Caption).HasMaxLength(300);
+        builder.HasIndex(attachment => new { attachment.CamperId, attachment.SortOrder });
     }
 }
 

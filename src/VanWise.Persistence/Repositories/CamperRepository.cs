@@ -23,6 +23,11 @@ public sealed class CamperRepository(VanWiseDbContext dbContext) : ICamperReposi
                 camper.City,
                 camper.Dealer == null ? null : camper.Dealer.Name,
                 camper.IsFavorite,
+                camper.Attachments
+                    .Where(attachment => attachment.IsPhoto)
+                    .OrderBy(attachment => attachment.SortOrder)
+                    .Select(attachment => attachment.StoragePath)
+                    .FirstOrDefault(),
                 camper.AskingPrice == null || camper.LengthMeters == null || camper.LengthMeters <= 0 ? 0 : camper.AskingPrice.Value / camper.LengthMeters.Value))
             .ToListAsync(cancellationToken);
     }
@@ -58,6 +63,15 @@ public sealed class CamperRepository(VanWiseDbContext dbContext) : ICamperReposi
                 camper.IsFavorite,
                 camper.Dealer == null ? null : camper.Dealer.Name,
                 camper.Tags.Select(tag => tag.Name).ToList(),
+                camper.Attachments
+                    .Where(attachment => attachment.IsPhoto)
+                    .OrderBy(attachment => attachment.SortOrder)
+                    .Select(attachment => new CamperImageDto(
+                        attachment.StoragePath,
+                        attachment.FileName,
+                        attachment.Caption,
+                        attachment.SortOrder))
+                    .ToList(),
                 camper.AskingPrice == null || camper.LengthMeters == null || camper.LengthMeters <= 0 ? 0 : camper.AskingPrice.Value / camper.LengthMeters.Value))
             .FirstOrDefaultAsync(cancellationToken);
     }

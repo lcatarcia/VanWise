@@ -19,4 +19,5 @@ public sealed record CamperDetailDto(
     bool IsFavorite,
     string? DealerName,
     IReadOnlyCollection<string> Tags,
+    IReadOnlyCollection<CamperImageDto> Images,
     decimal PricePerMeter);

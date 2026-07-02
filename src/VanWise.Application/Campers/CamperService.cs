@@ -77,7 +77,7 @@ public sealed class CamperService(
             request.SourceUrl,
             request.IsFavorite);
 
-        camperRepository.RemoveExistingTagsAndPhotos(camper);
+        camperRepository.RemoveExistingTags(camper);
         camper.ReplaceTags(request.Tags ?? []);
         camper.ReplaceRemotePhotos(request.ImageUrls ?? []);
         await unitOfWork.SaveChangesAsync(cancellationToken);

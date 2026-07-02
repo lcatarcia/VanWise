@@ -34,6 +34,23 @@ public sealed class Attachment : Entity
 
     public static Attachment RemotePhoto(Guid camperId, string imageUrl, int sortOrder)
     {
+        var fileName = GetRemoteFileName(imageUrl, sortOrder);
+        return new Attachment(camperId, fileName, "image/*", imageUrl, string.Empty, sortOrder, true);
+    }
+
+    public void UpdateRemotePhoto(string imageUrl, int sortOrder)
+    {
+        FileName = GetRemoteFileName(imageUrl, sortOrder);
+        ContentType = "image/*";
+        StoragePath = imageUrl.Trim();
+        Caption = string.Empty;
+        SortOrder = sortOrder;
+        IsPhoto = true;
+        MarkUpdated();
+    }
+
+    private static string GetRemoteFileName(string imageUrl, int sortOrder)
+    {
         var uri = new Uri(imageUrl, UriKind.Absolute);
         var fileName = Path.GetFileName(uri.LocalPath);
         if (string.IsNullOrWhiteSpace(fileName))
@@ -41,6 +58,6 @@ public sealed class Attachment : Entity
             fileName = $"camper-photo-{sortOrder + 1}.jpg";
         }
 
-        return new Attachment(camperId, fileName, "image/*", imageUrl, string.Empty, sortOrder, true);
+        return fileName;
     }
 }

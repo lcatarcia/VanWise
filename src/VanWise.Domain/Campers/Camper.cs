@@ -111,13 +111,31 @@ public sealed class Camper : Entity
 
     public void ReplaceRemotePhotos(IEnumerable<string> imageUrls)
     {
-        _attachments.RemoveAll(attachment => attachment.IsPhoto);
+        var desiredUrls = imageUrls
+            .Select(Normalize)
+            .Where(url => url.Length > 0)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        var existingPhotos = _attachments
+            .Where(attachment => attachment.IsPhoto)
+            .OrderBy(attachment => attachment.SortOrder)
+            .ThenBy(attachment => attachment.CreatedAt)
+            .ToList();
 
-        var sortOrder = 0;
-        foreach (var imageUrl in imageUrls.Select(Normalize).Where(url => url.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase))
+        for (var index = 0; index < desiredUrls.Count; index++)
         {
-            _attachments.Add(Attachment.RemotePhoto(Id, imageUrl, sortOrder));
-            sortOrder++;
+            if (index < existingPhotos.Count)
+            {
+                existingPhotos[index].UpdateRemotePhoto(desiredUrls[index], index);
+                continue;
+            }
+
+            _attachments.Add(Attachment.RemotePhoto(Id, desiredUrls[index], index));
+        }
+
+        foreach (var extraPhoto in existingPhotos.Skip(desiredUrls.Count))
+        {
+            _attachments.Remove(extraPhoto);
         }
 
         MarkUpdated();

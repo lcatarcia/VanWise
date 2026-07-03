@@ -23,6 +23,7 @@ public sealed class CamperValidationTests
             4,
             "Lombardia",
             "Milano",
+            "Via Roma 1, Milano",
             "Well equipped",
             "https://example.com/hymer",
             true,
@@ -54,6 +55,7 @@ public sealed class CamperValidationTests
             string.Empty,
             string.Empty,
             string.Empty,
+            string.Empty,
             false,
             [],
             []);
@@ -81,6 +83,7 @@ public sealed class CamperValidationTests
             null,
             string.Empty,
             "Milano",
+            string.Empty,
             string.Empty,
             string.Empty,
             false,

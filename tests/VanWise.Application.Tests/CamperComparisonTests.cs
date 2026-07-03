@@ -12,7 +12,7 @@ public sealed class CamperComparisonTests
     public async Task CompareAsync_rejects_duplicate_ids()
     {
         var camperId = Guid.NewGuid();
-        var service = new CamperService(new EmptyCamperRepository(), null!, null!, null!);
+        var service = new CamperService(new EmptyCamperRepository(), null!, null!, null!, null!);
 
         var action = () => service.CompareAsync([camperId, camperId], CancellationToken.None);
 

@@ -22,6 +22,9 @@ public sealed class CamperDomainTests
             "Veneto",
             "Padova",
             string.Empty,
+            null,
+            null,
+            string.Empty,
             "https://example.com/adria",
             false);
 
@@ -44,6 +47,9 @@ public sealed class CamperDomainTests
             null,
             "Veneto",
             " Padova ",
+            string.Empty,
+            null,
+            null,
             string.Empty,
             string.Empty,
             false);
@@ -68,6 +74,9 @@ public sealed class CamperDomainTests
             null,
             string.Empty,
             "Padova",
+            string.Empty,
+            null,
+            null,
             string.Empty,
             string.Empty,
             false);

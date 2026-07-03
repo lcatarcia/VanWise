@@ -8,8 +8,8 @@ interface VanWiseMarkProps {
 }
 
 export function VanWiseMark({ compact = false, size = 'md' }: VanWiseMarkProps) {
-  const heights = { sm: 40, md: 56, lg: 80 }
-  const iconHeights = { sm: 36, md: 46, lg: 64 }
+  const heights = { sm: 40, md: 64, lg: 80 }
+  const iconHeights = { sm: 36, md: 50, lg: 64 }
 
   return (
     <Box sx={{ alignItems: 'center', display: 'flex' }}>

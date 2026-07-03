@@ -7,6 +7,7 @@ namespace VanWise.Application.Campers;
 public sealed class CamperService(
     ICamperRepository camperRepository,
     IUnitOfWork unitOfWork,
+    IGeocodingService geocodingService,
     IValidator<CreateCamperRequest> createValidator,
     IValidator<UpdateCamperRequest> updateValidator) : ICamperService
 {
@@ -24,6 +25,8 @@ public sealed class CamperService(
     {
         await createValidator.ValidateAndThrowAsync(request, cancellationToken);
 
+        var coordinates = await ResolveCoordinatesAsync(request.Address, request.City, request.Region, cancellationToken);
+
         var camper = new Camper(
             request.Brand,
             request.Model,
@@ -38,8 +41,8 @@ public sealed class CamperService(
             request.Region,
             request.City,
             request.Address,
-            request.Latitude,
-            request.Longitude,
+            coordinates?.Latitude,
+            coordinates?.Longitude,
             request.Notes,
             request.SourceUrl,
             request.IsFavorite);
@@ -63,6 +66,8 @@ public sealed class CamperService(
             return null;
         }
 
+        var coordinates = await ResolveCoordinatesAsync(request.Address, request.City, request.Region, cancellationToken);
+
         camper.UpdateDetails(
             request.Brand,
             request.Model,
@@ -77,8 +82,8 @@ public sealed class CamperService(
             request.Region,
             request.City,
             request.Address,
-            request.Latitude,
-            request.Longitude,
+            coordinates?.Latitude,
+            coordinates?.Longitude,
             request.Notes,
             request.SourceUrl,
             request.IsFavorite);
@@ -118,5 +123,30 @@ public sealed class CamperService(
         }
 
         return camperRepository.GetComparisonAsync(distinctIds, cancellationToken);
+    }
+
+    private async Task<(double Latitude, double Longitude)?> ResolveCoordinatesAsync(
+        string address, string city, string region, CancellationToken cancellationToken)
+    {
+        // Priority: full address > city + region > city alone
+        if (!string.IsNullOrWhiteSpace(address))
+        {
+            var result = await geocodingService.GeocodeAsync(address, cancellationToken);
+            if (result is not null)
+            {
+                return result;
+            }
+        }
+
+        var fallbackQuery = string.IsNullOrWhiteSpace(city)
+            ? null
+            : string.IsNullOrWhiteSpace(region) ? city : $"{city}, {region}";
+
+        if (fallbackQuery is not null)
+        {
+            return await geocodingService.GeocodeAsync(fallbackQuery, cancellationToken);
+        }
+
+        return null;
     }
 }

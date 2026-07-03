@@ -14,8 +14,6 @@ public sealed record UpdateCamperRequest(
     string Region,
     string City,
     string Address,
-    double? Latitude,
-    double? Longitude,
     string Notes,
     string SourceUrl,
     bool IsFavorite,

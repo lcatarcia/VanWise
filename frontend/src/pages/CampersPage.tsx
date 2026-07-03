@@ -231,8 +231,6 @@ export function CampersPage() {
     }, [])
     const request: CreateCamperRequest = {
       ...values,
-      latitude: null,
-      longitude: null,
       tags: submittedTags,
       imageUrls,
     }

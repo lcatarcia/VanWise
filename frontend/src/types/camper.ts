@@ -35,8 +35,6 @@ export interface CreateCamperRequest {
   region: string
   city: string
   address: string
-  latitude: number | null
-  longitude: number | null
   notes: string
   sourceUrl: string
   isFavorite: boolean

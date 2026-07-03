@@ -17,8 +17,6 @@ public sealed class CreateCamperRequestValidator : CamperRequestValidatorBase<Cr
             request => request.Region,
             request => request.City,
             request => request.Address,
-            request => request.Latitude,
-            request => request.Longitude,
             request => request.SourceUrl,
             request => request.ImageUrls);
     }

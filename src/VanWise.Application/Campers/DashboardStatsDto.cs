@@ -7,7 +7,7 @@ public sealed record DashboardStatsDto(
     decimal AverageMileageKm,
     IReadOnlyCollection<DistributionPointDto> BrandDistribution,
     IReadOnlyCollection<DistributionPointDto> PriceDistribution,
-    IReadOnlyCollection<DistributionPointDto> LengthDistribution,
+    IReadOnlyCollection<DistributionPointDto> RegionDistribution,
     IReadOnlyCollection<CamperSummaryDto> LatestCampers);
 
 public sealed record DistributionPointDto(string Label, decimal Value);

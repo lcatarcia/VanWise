@@ -119,7 +119,7 @@ public sealed class CamperRepository(VanWiseDbContext dbContext) : ICamperReposi
             decimal.Round((decimal)averageMileage, 2),
             await GetBrandDistribution(cancellationToken),
             await GetPriceDistribution(cancellationToken),
-            await GetLengthDistribution(cancellationToken),
+            await GetRegionDistribution(cancellationToken),
             await ListAsync(new CamperFilterRequest(null, null, null, null, null, null, null, null, null, null, null), cancellationToken));
     }
 
@@ -217,12 +217,14 @@ public sealed class CamperRepository(VanWiseDbContext dbContext) : ICamperReposi
             .ToList();
     }
 
-    private async Task<IReadOnlyCollection<DistributionPointDto>> GetLengthDistribution(CancellationToken cancellationToken)
+    private async Task<IReadOnlyCollection<DistributionPointDto>> GetRegionDistribution(CancellationToken cancellationToken)
     {
         var points = await dbContext.Campers
             .AsNoTracking()
-            .GroupBy(camper => camper.LengthMeters == null ? "Non indicato" : camper.LengthMeters < 6 ? "< 6m" : camper.LengthMeters < 7.5m ? "6m-7.5m" : "> 7.5m")
+            .Where(camper => camper.Region != null && camper.Region != "")
+            .GroupBy(camper => camper.Region)
             .Select(group => new { Label = group.Key, Value = group.Count() })
+            .OrderByDescending(point => point.Value)
             .ToListAsync(cancellationToken);
 
         return points

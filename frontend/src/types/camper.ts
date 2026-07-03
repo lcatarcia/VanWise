@@ -100,6 +100,6 @@ export interface DashboardStats {
   averageMileageKm: number
   brandDistribution: DistributionPoint[]
   priceDistribution: DistributionPoint[]
-  lengthDistribution: DistributionPoint[]
+  regionDistribution: DistributionPoint[]
   latestCampers: CamperSummary[]
 }

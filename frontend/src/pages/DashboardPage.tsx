@@ -1,12 +1,15 @@
-import AddBoxOutlinedIcon from '@mui/icons-material/AddBoxOutlined'
-import IndeterminateCheckBoxOutlinedIcon from '@mui/icons-material/IndeterminateCheckBoxOutlined'
-import { Box, Card, CardContent, Grid, Stack, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@mui/material'
+import DirectionsBusIcon from '@mui/icons-material/DirectionsBus'
+import FavoriteIcon from '@mui/icons-material/Favorite'
+import LocalOfferOutlinedIcon from '@mui/icons-material/LocalOfferOutlined'
+import MapOutlinedIcon from '@mui/icons-material/MapOutlined'
+import SpeedIcon from '@mui/icons-material/Speed'
+import { Avatar, Box, Card, CardContent, Chip, Grid, Stack, Typography } from '@mui/material'
 import { useQuery } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { getDashboardStats } from '../api/campers'
-import { TrendIcon } from '../components/TrendIcon'
 import { VanWiseMark } from '../components/VanWiseMark'
+import type { CamperSummary } from '../types/camper'
 
 const fallbackStats = {
   totalCampers: 0,
@@ -15,9 +18,11 @@ const fallbackStats = {
   averageMileageKm: 0,
   brandDistribution: [],
   priceDistribution: [],
-  lengthDistribution: [],
-  latestCampers: [],
+  regionDistribution: [],
+  latestCampers: [] as CamperSummary[],
 }
+
+const PIE_COLORS = ['#7BAE7F', '#E9A03B', '#5BA4CF', '#ff6b5f', '#b39ddb', '#80cbc4']
 
 export function DashboardPage() {
   const { data = fallbackStats } = useQuery({
@@ -26,15 +31,16 @@ export function DashboardPage() {
     retry: false,
   })
 
-  const serviceRows = [
-    { label: 'Camper catalogati', value: data.totalCampers, delta: data.totalCampers > 0 ? 'up' : 'flat' },
-    { label: 'Preferiti', value: data.favoriteCampers, delta: data.favoriteCampers > 0 ? 'up' : 'flat' },
-    { label: 'Prezzo medio', value: `EUR ${data.averagePrice.toLocaleString('it-IT')}`, delta: 'down' },
-    { label: 'Km medi', value: data.averageMileageKm.toLocaleString('it-IT'), delta: 'down' },
-  ] as const
+  const kpis = [
+    { label: 'Camper monitorati', value: data.totalCampers, icon: <DirectionsBusIcon />, color: '#7BAE7F' },
+    { label: 'Preferiti', value: data.favoriteCampers, icon: <FavoriteIcon />, color: '#ff6b5f' },
+    { label: 'Prezzo medio', value: `€ ${data.averagePrice.toLocaleString('it-IT', { maximumFractionDigits: 0 })}`, icon: <LocalOfferOutlinedIcon />, color: '#E9A03B' },
+    { label: 'Km medi', value: data.averageMileageKm.toLocaleString('it-IT', { maximumFractionDigits: 0 }), icon: <SpeedIcon />, color: '#5BA4CF' },
+  ]
 
   return (
     <Stack spacing={4}>
+      {/* Hero */}
       <Card
         sx={{
           overflow: 'hidden',
@@ -57,32 +63,33 @@ export function DashboardPage() {
             </Typography>
             <Typography sx={{ fontSize: { xs: '2rem', md: '2.5rem' } }} variant="h4">Dashboard VanWise</Typography>
             <Typography color="text.secondary">
-              KPI e segnali per scegliere il camper giusto prima della prossima strada.
+              Il tuo centro di controllo per trovare il camper perfetto.
             </Typography>
           </Box>
-          <VanWiseMark />
+          <VanWiseMark size="lg" />
         </CardContent>
       </Card>
+
+      {/* KPI Cards */}
       <Grid container spacing={3}>
-        {[
-          ['Camper monitorati', data.totalCampers],
-          ['Preferiti', data.favoriteCampers],
-          ['Prezzo medio', `EUR ${data.averagePrice.toLocaleString('it-IT')}`],
-          ['Km medi', data.averageMileageKm.toLocaleString('it-IT')],
-        ].map(([label, value]) => (
-          <Grid key={label} size={{ xs: 12, md: 3 }}>
+        {kpis.map((kpi) => (
+          <Grid key={kpi.label} size={{ xs: 6, md: 3 }}>
             <Card component={motion.div} whileHover={{ y: -4 }}>
               <CardContent sx={{ minHeight: 96 }}>
                 <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
-                  <Typography color="text.secondary" variant="body2">{label}</Typography>
-                  <TrendIcon direction={label === 'Preferiti' ? 'up' : 'down'} />
+                  <Typography color="text.secondary" variant="body2">{kpi.label}</Typography>
+                  <Avatar sx={{ bgcolor: `${kpi.color}22`, color: kpi.color, height: 36, width: 36 }}>
+                    {kpi.icon}
+                  </Avatar>
                 </Stack>
-                <Typography sx={{ mt: 1, textShadow: '0 0 24px rgba(123,174,127,.22)' }} variant="h5">{value}</Typography>
+                <Typography sx={{ mt: 1, textShadow: `0 0 24px ${kpi.color}36` }} variant="h5">{kpi.value}</Typography>
               </CardContent>
             </Card>
           </Grid>
         ))}
       </Grid>
+
+      {/* Charts Row */}
       <Grid container spacing={3}>
         <Grid size={{ xs: 12, lg: 8 }}>
           <Card>
@@ -104,43 +111,110 @@ export function DashboardPage() {
           </Card>
         </Grid>
         <Grid size={{ xs: 12, lg: 4 }}>
-          <Card>
+          <Card sx={{ height: '100%' }}>
             <CardContent>
-              <Typography variant="h6">Segnali rapidi</Typography>
-              <Box sx={{ mt: 2, overflowX: 'auto' }}>
-                <Table size="small" sx={{ minWidth: 340 }}>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Categoria</TableCell>
-                      <TableCell align="right">Valore</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    <TableRow sx={{ bgcolor: 'rgba(123,174,127,.18)' }}>
-                      <TableCell sx={{ fontWeight: 800 }}>
-                        <IndeterminateCheckBoxOutlinedIcon fontSize="inherit" sx={{ mr: 1 }} />
-                        VanWise
-                      </TableCell>
-                      <TableCell align="right" sx={{ fontWeight: 800 }}>{data.totalCampers}</TableCell>
-                    </TableRow>
-                    {serviceRows.map((row, index) => (
-                      <TableRow key={row.label} sx={{ bgcolor: index % 2 === 0 ? 'rgba(248,247,244,.05)' : 'rgba(248,247,244,.025)' }}>
-                        <TableCell sx={{ pl: { xs: 2, sm: 4 } }}>
-                          <AddBoxOutlinedIcon color="disabled" fontSize="inherit" sx={{ mr: 1 }} />
-                          {row.label}
-                        </TableCell>
-                        <TableCell align="right">
-                          <TrendIcon direction={row.delta} /> {row.value}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+              <Typography variant="h6">Fasce di prezzo</Typography>
+              <Typography color="text.secondary" variant="body2">Come si distribuisce il budget.</Typography>
+              <Box sx={{ height: 260, mt: 2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {data.priceDistribution.length > 0 ? (
+                  <ResponsiveContainer>
+                    <PieChart>
+                      <Pie data={data.priceDistribution} dataKey="value" nameKey="label" cx="50%" cy="50%" outerRadius={90} innerRadius={50} paddingAngle={3} strokeWidth={0}>
+                        {data.priceDistribution.map((_, index) => (
+                          <Cell key={index} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip contentStyle={{ background: '#172225', border: '1px solid rgba(123,174,127,.28)', borderRadius: 12, color: '#F8F7F4' }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <Typography color="text.secondary" variant="body2">Nessun dato disponibile</Typography>
+                )}
               </Box>
+              <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1, justifyContent: 'center' }}>
+                {data.priceDistribution.map((point, index) => (
+                  <Chip
+                    key={point.label}
+                    label={`${point.label} (${point.value})`}
+                    size="small"
+                    sx={{ bgcolor: `${PIE_COLORS[index % PIE_COLORS.length]}22`, color: PIE_COLORS[index % PIE_COLORS.length], fontWeight: 600 }}
+                  />
+                ))}
+              </Stack>
             </CardContent>
           </Card>
         </Grid>
       </Grid>
+
+      {/* Region Distribution */}
+      <Card>
+        <CardContent>
+          <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mb: 1 }}>
+            <MapOutlinedIcon sx={{ color: '#5BA4CF' }} />
+            <Typography variant="h6">Dove si trovano</Typography>
+          </Stack>
+          <Typography color="text.secondary" variant="body2">Distribuzione geografica dei camper che stai monitorando.</Typography>
+          <Box sx={{ height: { xs: 240, sm: 280 }, mt: 3, minWidth: 0 }}>
+            {data.regionDistribution.length > 0 ? (
+              <ResponsiveContainer>
+                <BarChart data={data.regionDistribution} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(248,247,244,.10)" />
+                  <XAxis type="number" stroke="#aebbb3" />
+                  <YAxis dataKey="label" type="category" stroke="#aebbb3" width={120} />
+                  <Tooltip contentStyle={{ background: '#172225', border: '1px solid rgba(123,174,127,.28)', borderRadius: 12, color: '#F8F7F4' }} />
+                  <Bar dataKey="value" fill="#5BA4CF" radius={[0, 10, 10, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <Stack sx={{ alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                <Typography color="text.secondary" variant="body2">Nessun dato regionale disponibile</Typography>
+              </Stack>
+            )}
+          </Box>
+        </CardContent>
+      </Card>
+
+      {/* Latest Campers */}
+      {data.latestCampers.length > 0 && (
+        <Box>
+          <Typography variant="h6" sx={{ mb: 2 }}>Ultimi aggiunti</Typography>
+          <Grid container spacing={2}>
+            {data.latestCampers.slice(0, 6).map((camper) => (
+              <Grid key={camper.id} size={{ xs: 12, sm: 6, md: 4 }}>
+                <Card component={motion.div} whileHover={{ y: -3 }} sx={{ height: '100%' }}>
+                  {camper.coverImageUrl && (
+                    <Box
+                      component="img"
+                      src={camper.coverImageUrl}
+                      alt={`${camper.brand} ${camper.model}`}
+                      sx={{ height: 140, objectFit: 'cover', width: '100%', borderTopLeftRadius: 18, borderTopRightRadius: 18 }}
+                    />
+                  )}
+                  <CardContent sx={{ pb: '12px !important' }}>
+                    <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                      {camper.brand} {camper.model}
+                    </Typography>
+                    <Stack direction="row" spacing={1} sx={{ mt: 0.5, flexWrap: 'wrap' }}>
+                      {camper.askingPrice && (
+                        <Chip label={`€ ${camper.askingPrice.toLocaleString('it-IT')}`} size="small" sx={{ fontWeight: 600, bgcolor: 'rgba(123,174,127,.15)', color: '#7BAE7F' }} />
+                      )}
+                      {camper.year && (
+                        <Chip label={camper.year} size="small" variant="outlined" sx={{ fontWeight: 600 }} />
+                      )}
+                      {camper.mileageKm && (
+                        <Chip label={`${(camper.mileageKm / 1000).toFixed(0)}k km`} size="small" variant="outlined" sx={{ fontWeight: 600 }} />
+                      )}
+                    </Stack>
+                    {camper.isFavorite && (
+                      <FavoriteIcon sx={{ color: '#ff6b5f', fontSize: 16, mt: 1 }} />
+                    )}
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
+      )}
     </Stack>
   )
 }

@@ -59,6 +59,9 @@ public sealed class CamperRepository(VanWiseDbContext dbContext) : ICamperReposi
                 camper.SleepingPlaces,
                 camper.Region,
                 camper.City,
+                camper.Address,
+                camper.Latitude,
+                camper.Longitude,
                 camper.Notes,
                 camper.SourceUrl,
                 camper.IsFavorite,
@@ -120,6 +123,7 @@ public sealed class CamperRepository(VanWiseDbContext dbContext) : ICamperReposi
             await GetBrandDistribution(cancellationToken),
             await GetPriceDistribution(cancellationToken),
             await GetRegionDistribution(cancellationToken),
+            await GetCamperLocations(cancellationToken),
             await ListAsync(new CamperFilterRequest(null, null, null, null, null, null, null, null, null, null, null), cancellationToken));
     }
 
@@ -230,5 +234,19 @@ public sealed class CamperRepository(VanWiseDbContext dbContext) : ICamperReposi
         return points
             .Select(point => new DistributionPointDto(point.Label, point.Value))
             .ToList();
+    }
+
+    private async Task<IReadOnlyCollection<CamperLocationDto>> GetCamperLocations(CancellationToken cancellationToken)
+    {
+        return await dbContext.Campers
+            .AsNoTracking()
+            .Where(camper => camper.Latitude != null && camper.Longitude != null)
+            .Select(camper => new CamperLocationDto(
+                camper.Id,
+                camper.Brand,
+                camper.Model,
+                camper.Latitude!.Value,
+                camper.Longitude!.Value))
+            .ToListAsync(cancellationToken);
     }
 }

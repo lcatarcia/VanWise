@@ -24,6 +24,9 @@ public sealed class Camper : Entity
     public int? SleepingPlaces { get; private set; }
     public string Region { get; private set; } = string.Empty;
     public string City { get; private set; } = string.Empty;
+    public string Address { get; private set; } = string.Empty;
+    public double? Latitude { get; private set; }
+    public double? Longitude { get; private set; }
     public string Notes { get; private set; } = string.Empty;
     public string SourceUrl { get; private set; } = string.Empty;
     public bool IsFavorite { get; private set; }
@@ -53,11 +56,14 @@ public sealed class Camper : Entity
         int? sleepingPlaces,
         string region,
         string city,
+        string address,
+        double? latitude,
+        double? longitude,
         string notes,
         string sourceUrl,
         bool isFavorite)
     {
-        UpdateDetails(brand, model, year, askingPrice, mileageKm, lengthMeters, transmission, engine, chassis, sleepingPlaces, region, city, notes, sourceUrl, isFavorite);
+        UpdateDetails(brand, model, year, askingPrice, mileageKm, lengthMeters, transmission, engine, chassis, sleepingPlaces, region, city, address, latitude, longitude, notes, sourceUrl, isFavorite);
     }
 
     public decimal PricePerMeter => AskingPrice is null || LengthMeters is null or <= 0 ? 0 : decimal.Round(AskingPrice.Value / LengthMeters.Value, 2);
@@ -75,6 +81,9 @@ public sealed class Camper : Entity
         int? sleepingPlaces,
         string region,
         string city,
+        string address,
+        double? latitude,
+        double? longitude,
         string notes,
         string sourceUrl,
         bool isFavorite)
@@ -91,6 +100,9 @@ public sealed class Camper : Entity
         SleepingPlaces = sleepingPlaces;
         Region = Normalize(region);
         City = Normalize(city);
+        Address = Normalize(address);
+        Latitude = latitude;
+        Longitude = longitude;
         Notes = Normalize(notes);
         SourceUrl = Normalize(sourceUrl);
         IsFavorite = isFavorite;

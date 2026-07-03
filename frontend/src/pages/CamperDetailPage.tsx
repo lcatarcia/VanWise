@@ -55,6 +55,7 @@ export function CamperDetailPage() {
     ['Posti letto', formatOptionalNumber(camper.sleepingPlaces)],
     ['Regione', camper.region || '-'],
     ['Città', camper.city || '-'],
+    ['Indirizzo', camper.address || '-'],
     ['Rivenditore', camper.dealerName ?? '-'],
     ['EUR/m', `EUR ${camper.pricePerMeter.toLocaleString('it-IT', { maximumFractionDigits: 0 })}`],
   ]

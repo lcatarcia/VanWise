@@ -13,6 +13,7 @@ public sealed record ParsedCamperDto(
     int? SleepingPlaces,
     string Region,
     string City,
+    string Address,
     string Notes,
     string SourceUrl,
     IReadOnlyCollection<string> ImageUrls);

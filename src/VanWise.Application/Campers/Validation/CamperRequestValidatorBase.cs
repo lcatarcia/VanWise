@@ -15,6 +15,9 @@ public abstract class CamperRequestValidatorBase<T> : AbstractValidator<T>
         Expression<Func<T, int?>> sleepingPlaces,
         Expression<Func<T, string>> region,
         Expression<Func<T, string>> city,
+        Expression<Func<T, string>> address,
+        Expression<Func<T, double?>> latitude,
+        Expression<Func<T, double?>> longitude,
         Expression<Func<T, string>> sourceUrl,
         Expression<Func<T, IReadOnlyCollection<string>>> imageUrls)
     {
@@ -23,6 +26,8 @@ public abstract class CamperRequestValidatorBase<T> : AbstractValidator<T>
         var mileageKmValue = mileageKm.Compile();
         var lengthMetersValue = lengthMeters.Compile();
         var sleepingPlacesValue = sleepingPlaces.Compile();
+        var latitudeValue = latitude.Compile();
+        var longitudeValue = longitude.Compile();
         var imageUrlsValue = imageUrls.Compile();
 
         RuleFor(brand).NotEmpty().MaximumLength(100);
@@ -34,6 +39,9 @@ public abstract class CamperRequestValidatorBase<T> : AbstractValidator<T>
         RuleFor(sleepingPlaces).InclusiveBetween(1, 10).When(request => sleepingPlacesValue(request) is not null);
         RuleFor(region).MaximumLength(80);
         RuleFor(city).MaximumLength(80);
+        RuleFor(address).MaximumLength(200);
+        RuleFor(latitude).InclusiveBetween(-90, 90).When(request => latitudeValue(request) is not null);
+        RuleFor(longitude).InclusiveBetween(-180, 180).When(request => longitudeValue(request) is not null);
         RuleFor(sourceUrl)
             .MaximumLength(1000)
             .Must(BeEmptyOrHttpUrl)

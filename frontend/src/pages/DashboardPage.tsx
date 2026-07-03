@@ -8,8 +8,10 @@ import { useQuery } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { getDashboardStats } from '../api/campers'
+import { CamperMap } from '../components/CamperMap'
 import { VanWiseMark } from '../components/VanWiseMark'
-import type { CamperSummary } from '../types/camper'
+import type { CamperLocation, CamperSummary } from '../types/camper'
+import { getBrandInitial, getBrandLogoUrl } from '../utils/brandLogos'
 
 const fallbackStats = {
   totalCampers: 0,
@@ -19,6 +21,7 @@ const fallbackStats = {
   brandDistribution: [],
   priceDistribution: [],
   regionDistribution: [],
+  camperLocations: [] as CamperLocation[],
   latestCampers: [] as CamperSummary[],
 }
 
@@ -107,6 +110,35 @@ export function DashboardPage() {
                   </BarChart>
                 </ResponsiveContainer>
               </Box>
+              {data.brandDistribution.length > 0 && (
+                <Stack direction="row" spacing={2} sx={{ mt: 2, flexWrap: 'wrap', gap: 1.5, justifyContent: 'center' }}>
+                  {data.brandDistribution.map((point) => {
+                    const logoUrl = getBrandLogoUrl(point.label)
+                    return (
+                      <Stack key={point.label} sx={{ alignItems: 'center', gap: 0.5 }}>
+                        <Avatar
+                          src={logoUrl ?? undefined}
+                          sx={{
+                            bgcolor: logoUrl ? '#F8F7F4' : 'rgba(123,174,127,.18)',
+                            border: '1px solid rgba(123,174,127,.3)',
+                            color: '#7BAE7F',
+                            fontSize: 14,
+                            fontWeight: 800,
+                            height: 36,
+                            width: 36,
+                            '& img': { objectFit: 'contain', p: 0.5 },
+                          }}
+                        >
+                          {!logoUrl && getBrandInitial(point.label)}
+                        </Avatar>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontSize: 10 }}>
+                          {point.label}
+                        </Typography>
+                      </Stack>
+                    )
+                  })}
+                </Stack>
+              )}
             </CardContent>
           </Card>
         </Grid>
@@ -146,30 +178,16 @@ export function DashboardPage() {
         </Grid>
       </Grid>
 
-      {/* Region Distribution */}
+      {/* Map */}
       <Card>
         <CardContent>
           <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mb: 1 }}>
             <MapOutlinedIcon sx={{ color: '#5BA4CF' }} />
             <Typography variant="h6">Dove si trovano</Typography>
           </Stack>
-          <Typography color="text.secondary" variant="body2">Distribuzione geografica dei camper che stai monitorando.</Typography>
-          <Box sx={{ height: { xs: 240, sm: 280 }, mt: 3, minWidth: 0 }}>
-            {data.regionDistribution.length > 0 ? (
-              <ResponsiveContainer>
-                <BarChart data={data.regionDistribution} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(248,247,244,.10)" />
-                  <XAxis type="number" stroke="#aebbb3" />
-                  <YAxis dataKey="label" type="category" stroke="#aebbb3" width={120} />
-                  <Tooltip contentStyle={{ background: '#172225', border: '1px solid rgba(123,174,127,.28)', borderRadius: 12, color: '#F8F7F4' }} />
-                  <Bar dataKey="value" fill="#5BA4CF" radius={[0, 10, 10, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <Stack sx={{ alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-                <Typography color="text.secondary" variant="body2">Nessun dato regionale disponibile</Typography>
-              </Stack>
-            )}
+          <Typography color="text.secondary" variant="body2">Posizione dei camper che stai monitorando sulla mappa.</Typography>
+          <Box sx={{ height: { xs: 300, sm: 400 }, mt: 3, borderRadius: 3, overflow: 'hidden' }}>
+            <CamperMap locations={data.camperLocations} />
           </Box>
         </CardContent>
       </Card>

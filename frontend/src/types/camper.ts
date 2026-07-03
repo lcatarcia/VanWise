@@ -34,6 +34,9 @@ export interface CreateCamperRequest {
   sleepingPlaces: number | null
   region: string
   city: string
+  address: string
+  latitude: number | null
+  longitude: number | null
   notes: string
   sourceUrl: string
   isFavorite: boolean
@@ -48,6 +51,9 @@ export interface CamperDetail extends CamperSummary {
   engine: string
   chassis: string
   sleepingPlaces: number | null
+  address: string
+  latitude: number | null
+  longitude: number | null
   notes: string
   sourceUrl: string
   tags: string[]
@@ -83,6 +89,7 @@ export interface ParsedCamper {
   sleepingPlaces: number | null
   region: string
   city: string
+  address: string
   notes: string
   sourceUrl: string
   imageUrls: string[]
@@ -93,6 +100,14 @@ export interface DistributionPoint {
   value: number
 }
 
+export interface CamperLocation {
+  id: string
+  brand: string
+  model: string
+  latitude: number
+  longitude: number
+}
+
 export interface DashboardStats {
   totalCampers: number
   favoriteCampers: number
@@ -101,5 +116,6 @@ export interface DashboardStats {
   brandDistribution: DistributionPoint[]
   priceDistribution: DistributionPoint[]
   regionDistribution: DistributionPoint[]
+  camperLocations: CamperLocation[]
   latestCampers: CamperSummary[]
 }

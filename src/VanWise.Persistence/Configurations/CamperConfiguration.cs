@@ -19,6 +19,7 @@ public sealed class CamperConfiguration : IEntityTypeConfiguration<Camper>
         builder.Property(camper => camper.Chassis).HasMaxLength(120);
         builder.Property(camper => camper.Region).HasMaxLength(80);
         builder.Property(camper => camper.City).HasMaxLength(80);
+        builder.Property(camper => camper.Address).HasMaxLength(200);
         builder.Property(camper => camper.Notes).HasMaxLength(4000);
         builder.Property(camper => camper.SourceUrl).HasMaxLength(1000);
 

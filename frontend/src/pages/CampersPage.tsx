@@ -120,6 +120,7 @@ const camperFormSchema = z.object({
   sleepingPlaces: optionalNumber.refine((value) => value === null || (Number.isInteger(value) && value >= 1 && value <= 10), 'Inserisci posti letto validi'),
   region: z.string().max(80),
   city: z.string().max(80),
+  address: z.string().max(200),
   notes: z.string().max(4000),
   sourceUrl: z.union([z.url('Inserisci un URL valido'), z.literal('')]),
   isFavorite: z.boolean(),
@@ -140,6 +141,7 @@ const defaultValues: CamperFormValues = {
   sleepingPlaces: null,
   region: '',
   city: '',
+  address: '',
   notes: '',
   sourceUrl: '',
   isFavorite: false,
@@ -159,6 +161,7 @@ function toFormValues(camper: CamperDetail): CamperFormValues {
     sleepingPlaces: camper.sleepingPlaces,
     region: camper.region,
     city: camper.city,
+    address: camper.address,
     notes: camper.notes,
     sourceUrl: camper.sourceUrl,
     isFavorite: camper.isFavorite,
@@ -200,6 +203,7 @@ export function CampersPage() {
         sleepingPlaces: parsedCamper.sleepingPlaces,
         region: parsedCamper.region,
         city: parsedCamper.city,
+        address: parsedCamper.address,
         notes: parsedCamper.notes,
         sourceUrl: parsedCamper.sourceUrl,
         isFavorite: form.getValues('isFavorite'),
@@ -227,6 +231,8 @@ export function CampersPage() {
     }, [])
     const request: CreateCamperRequest = {
       ...values,
+      latitude: null,
+      longitude: null,
       tags: submittedTags,
       imageUrls,
     }
@@ -368,6 +374,9 @@ export function CampersPage() {
               </Grid>
               <Grid size={{ xs: 12, md: 4 }}>
                 <TextField fullWidth label="Città" slotProps={textFieldSlotProps} {...form.register('city')} error={!!form.formState.errors.city} helperText={form.formState.errors.city?.message} />
+              </Grid>
+              <Grid size={{ xs: 12, md: 4 }}>
+                <TextField fullWidth label="Indirizzo" placeholder="es. Via Roma 1, Milano" slotProps={textFieldSlotProps} {...form.register('address')} error={!!form.formState.errors.address} helperText={form.formState.errors.address?.message} />
               </Grid>
               <Grid size={{ xs: 12, md: 4 }}>
                 <TextField fullWidth label="Tag" placeholder="Scrivi un tag e premi Invio" slotProps={textFieldSlotProps} value={tagInput} onBlur={addTag} onChange={(event) => setTagInput(event.target.value)} onKeyDown={handleTagKeyDown} />

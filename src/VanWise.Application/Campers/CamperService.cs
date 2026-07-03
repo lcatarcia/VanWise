@@ -37,6 +37,9 @@ public sealed class CamperService(
             request.SleepingPlaces,
             request.Region,
             request.City,
+            request.Address,
+            request.Latitude,
+            request.Longitude,
             request.Notes,
             request.SourceUrl,
             request.IsFavorite);
@@ -73,6 +76,9 @@ public sealed class CamperService(
             request.SleepingPlaces,
             request.Region,
             request.City,
+            request.Address,
+            request.Latitude,
+            request.Longitude,
             request.Notes,
             request.SourceUrl,
             request.IsFavorite);

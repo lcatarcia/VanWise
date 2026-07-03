@@ -113,6 +113,7 @@ public sealed partial class CamperListingParser(HttpClient httpClient) : ICamper
             ParseInteger(text, SleepingPlacesRegex()),
             string.Empty,
             string.Empty,
+            string.Empty,
             FirstNonEmpty(description, title),
             sourceUri.ToString(),
             images);

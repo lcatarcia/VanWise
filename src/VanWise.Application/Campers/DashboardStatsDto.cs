@@ -8,6 +8,9 @@ public sealed record DashboardStatsDto(
     IReadOnlyCollection<DistributionPointDto> BrandDistribution,
     IReadOnlyCollection<DistributionPointDto> PriceDistribution,
     IReadOnlyCollection<DistributionPointDto> RegionDistribution,
+    IReadOnlyCollection<CamperLocationDto> CamperLocations,
     IReadOnlyCollection<CamperSummaryDto> LatestCampers);
 
 public sealed record DistributionPointDto(string Label, decimal Value);
+
+public sealed record CamperLocationDto(Guid Id, string Brand, string Model, double Latitude, double Longitude);

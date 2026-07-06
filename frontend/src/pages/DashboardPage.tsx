@@ -29,9 +29,9 @@ const fallbackStats = {
 function computeHighlights(campers: CamperSummary[]) {
   if (campers.length === 0) return null
 
-  const withPrice = campers.filter((c) => c.askingPrice !== null && c.askingPrice > 0)
+  const withPrice = campers.filter((c) => c.askingPrice !== null && c.askingPrice >= 1000)
   const withKm = campers.filter((c) => c.mileageKm !== null && c.mileageKm >= 0)
-  const favorites = campers.filter((c) => c.isFavorite && c.askingPrice !== null && c.askingPrice > 0)
+  const favorites = campers.filter((c) => c.isFavorite && c.askingPrice !== null && c.askingPrice >= 1000)
 
   const cheapest = withPrice.length > 0
     ? withPrice.reduce((best, c) => (c.askingPrice! < best.askingPrice! ? c : best))

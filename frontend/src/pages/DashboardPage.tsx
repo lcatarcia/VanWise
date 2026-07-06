@@ -1,17 +1,18 @@
 import DirectionsBusIcon from '@mui/icons-material/DirectionsBus'
+import EmojiEventsOutlinedIcon from '@mui/icons-material/EmojiEventsOutlined'
 import FavoriteIcon from '@mui/icons-material/Favorite'
-import LocalOfferOutlinedIcon from '@mui/icons-material/LocalOfferOutlined'
 import MapOutlinedIcon from '@mui/icons-material/MapOutlined'
-import SpeedIcon from '@mui/icons-material/Speed'
-import { Avatar, Box, Card, CardContent, Chip, Grid, Stack, Typography } from '@mui/material'
+import RouteOutlinedIcon from '@mui/icons-material/RouteOutlined'
+import StarOutlinedIcon from '@mui/icons-material/StarOutlined'
+import TrendingDownOutlinedIcon from '@mui/icons-material/TrendingDownOutlined'
+import { Avatar, Box, Card, CardActionArea, CardContent, Chip, Grid, Stack, Typography } from '@mui/material'
 import { useQuery } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
-import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
-import { getDashboardStats } from '../api/campers'
+import { Link } from 'react-router-dom'
+import { getCampers, getDashboardStats } from '../api/campers'
 import { CamperMap } from '../components/CamperMap'
 import { VanWiseMark } from '../components/VanWiseMark'
 import type { CamperLocation, CamperSummary } from '../types/camper'
-import { getBrandInitial, getBrandLogoUrl } from '../utils/brandLogos'
 
 const fallbackStats = {
   totalCampers: 0,
@@ -25,20 +26,80 @@ const fallbackStats = {
   latestCampers: [] as CamperSummary[],
 }
 
-const PIE_COLORS = ['#7BAE7F', '#E9A03B', '#5BA4CF', '#ff6b5f', '#b39ddb', '#80cbc4']
+function computeHighlights(campers: CamperSummary[]) {
+  if (campers.length === 0) return null
+
+  const withPrice = campers.filter((c) => c.askingPrice !== null && c.askingPrice > 0)
+  const withKm = campers.filter((c) => c.mileageKm !== null && c.mileageKm >= 0)
+  const favorites = campers.filter((c) => c.isFavorite && c.askingPrice !== null && c.askingPrice > 0)
+
+  const cheapest = withPrice.length > 0
+    ? withPrice.reduce((best, c) => (c.askingPrice! < best.askingPrice! ? c : best))
+    : null
+
+  const lowestKm = withKm.length > 0
+    ? withKm.reduce((best, c) => (c.mileageKm! < best.mileageKm! ? c : best))
+    : null
+
+  const cheapestFavorite = favorites.length > 0
+    ? favorites.reduce((best, c) => (c.askingPrice! < best.askingPrice! ? c : best))
+    : null
+
+  const newest = campers.filter((c) => c.year !== null).length > 0
+    ? campers.filter((c) => c.year !== null).reduce((best, c) => (c.year! > best.year! ? c : best))
+    : null
+
+  const priceMin = withPrice.length > 0 ? Math.min(...withPrice.map((c) => c.askingPrice!)) : null
+  const priceMax = withPrice.length > 0 ? Math.max(...withPrice.map((c) => c.askingPrice!)) : null
+
+  return { cheapest, lowestKm, cheapestFavorite, newest, priceMin, priceMax }
+}
+
+function HighlightCard({ camper, icon, label, detail, color }: { camper: CamperSummary; icon: React.ReactNode; label: string; detail: string; color: string }) {
+  return (
+    <Card component={motion.div} whileHover={{ y: -3 }} sx={{ height: '100%' }}>
+      <CardActionArea component={Link} to={`/campers/${camper.id}`} sx={{ height: '100%' }}>
+        <CardContent>
+          <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center', mb: 1.5 }}>
+            <Avatar sx={{ bgcolor: `${color}22`, color, height: 36, width: 36 }}>
+              {icon}
+            </Avatar>
+            <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>{label}</Typography>
+          </Stack>
+          <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.3 }}>
+            {camper.brand} {camper.model}
+          </Typography>
+          <Typography variant="body2" sx={{ color, fontWeight: 700, mt: 0.5 }}>
+            {detail}
+          </Typography>
+          <Stack direction="row" spacing={0.5} sx={{ mt: 1, flexWrap: 'wrap', gap: 0.5 }}>
+            {camper.year && <Chip label={camper.year} size="small" variant="outlined" />}
+            {camper.region && <Chip label={camper.region} size="small" variant="outlined" />}
+          </Stack>
+        </CardContent>
+      </CardActionArea>
+    </Card>
+  )
+}
 
 export function DashboardPage() {
-  const { data = fallbackStats } = useQuery({
+  const { data: stats = fallbackStats } = useQuery({
     queryKey: ['dashboard'],
     queryFn: getDashboardStats,
     retry: false,
   })
 
+  const { data: campers = [] } = useQuery({
+    queryKey: ['campers'],
+    queryFn: getCampers,
+    retry: false,
+  })
+
+  const highlights = computeHighlights(campers)
+
   const kpis = [
-    { label: 'Camper monitorati', value: data.totalCampers, icon: <DirectionsBusIcon />, color: '#7BAE7F' },
-    { label: 'Preferiti', value: data.favoriteCampers, icon: <FavoriteIcon />, color: '#ff6b5f' },
-    { label: 'Prezzo medio', value: `€ ${data.averagePrice.toLocaleString('it-IT', { maximumFractionDigits: 0 })}`, icon: <LocalOfferOutlinedIcon />, color: '#E9A03B' },
-    { label: 'Km medi', value: data.averageMileageKm.toLocaleString('it-IT', { maximumFractionDigits: 0 }), icon: <SpeedIcon />, color: '#5BA4CF' },
+    { label: 'Camper monitorati', value: stats.totalCampers, icon: <DirectionsBusIcon />, color: '#7BAE7F' },
+    { label: 'Preferiti', value: stats.favoriteCampers, icon: <FavoriteIcon />, color: '#ff6b5f' },
   ]
 
   return (
@@ -73,7 +134,7 @@ export function DashboardPage() {
         </CardContent>
       </Card>
 
-      {/* KPI Cards */}
+      {/* KPI + Price Range */}
       <Grid container spacing={3}>
         {kpis.map((kpi) => (
           <Grid key={kpi.label} size={{ xs: 6, md: 3 }}>
@@ -90,93 +151,116 @@ export function DashboardPage() {
             </Card>
           </Grid>
         ))}
+        {highlights?.priceMin != null && highlights?.priceMax != null && (
+          <Grid size={{ xs: 12, md: 6 }}>
+            <Card component={motion.div} whileHover={{ y: -4 }}>
+              <CardContent sx={{ minHeight: 96 }}>
+                <Typography color="text.secondary" variant="body2">Range prezzo monitorato</Typography>
+                <Typography sx={{ mt: 1 }} variant="h5">
+                  € {highlights.priceMin.toLocaleString('it-IT')} — € {highlights.priceMax.toLocaleString('it-IT')}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+        )}
       </Grid>
 
-      {/* Charts Row */}
-      <Grid container spacing={3}>
-        <Grid size={{ xs: 12, lg: 8 }}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6">Distribuzione marchi</Typography>
-              <Typography color="text.secondary" variant="body2">Vista sintetica del mercato che stai monitorando.</Typography>
-              <Box sx={{ height: { xs: 260, sm: 320 }, mt: 3, minWidth: 0 }}>
-                <ResponsiveContainer>
-                  <BarChart data={data.brandDistribution}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(248,247,244,.10)" />
-                    <XAxis dataKey="label" stroke="#aebbb3" />
-                    <YAxis stroke="#aebbb3" />
-                    <Tooltip contentStyle={{ background: '#172225', border: '1px solid rgba(123,174,127,.28)', borderRadius: 12, color: '#F8F7F4' }} />
-                    <Bar dataKey="value" fill="#7BAE7F" radius={[10, 10, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </Box>
-              {data.brandDistribution.length > 0 && (
-                <Stack direction="row" spacing={2} sx={{ mt: 2, flexWrap: 'wrap', gap: 1.5, justifyContent: 'center' }}>
-                  {data.brandDistribution.map((point) => {
-                    const logoUrl = getBrandLogoUrl(point.label)
-                    return (
-                      <Stack key={point.label} sx={{ alignItems: 'center', gap: 0.5 }}>
-                        <Avatar
-                          src={logoUrl ?? undefined}
-                          sx={{
-                            bgcolor: logoUrl ? '#F8F7F4' : 'rgba(123,174,127,.18)',
-                            border: '1px solid rgba(123,174,127,.3)',
-                            color: '#7BAE7F',
-                            fontSize: 14,
-                            fontWeight: 800,
-                            height: 36,
-                            width: 36,
-                            '& img': { objectFit: 'contain', p: 0.5 },
-                          }}
-                        >
-                          {!logoUrl && getBrandInitial(point.label)}
-                        </Avatar>
-                        <Typography variant="caption" color="text.secondary" sx={{ fontSize: 10 }}>
-                          {point.label}
-                        </Typography>
+      {/* Highlights — decision helpers */}
+      {highlights && (
+        <Box>
+          <Typography variant="h6" sx={{ mb: 2 }}>🏆 Migliori candidati</Typography>
+          <Grid container spacing={2}>
+            {highlights.cheapest && (
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                <HighlightCard
+                  camper={highlights.cheapest}
+                  icon={<TrendingDownOutlinedIcon />}
+                  label="Più economico"
+                  detail={`€ ${highlights.cheapest.askingPrice!.toLocaleString('it-IT')}`}
+                  color="#7BAE7F"
+                />
+              </Grid>
+            )}
+            {highlights.lowestKm && (
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                <HighlightCard
+                  camper={highlights.lowestKm}
+                  icon={<RouteOutlinedIcon />}
+                  label="Meno km"
+                  detail={`${highlights.lowestKm.mileageKm!.toLocaleString('it-IT')} km`}
+                  color="#5BA4CF"
+                />
+              </Grid>
+            )}
+            {highlights.cheapestFavorite && (
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                <HighlightCard
+                  camper={highlights.cheapestFavorite}
+                  icon={<StarOutlinedIcon />}
+                  label="Preferito più economico"
+                  detail={`€ ${highlights.cheapestFavorite.askingPrice!.toLocaleString('it-IT')}`}
+                  color="#E9A03B"
+                />
+              </Grid>
+            )}
+            {highlights.newest && (
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                <HighlightCard
+                  camper={highlights.newest}
+                  icon={<EmojiEventsOutlinedIcon />}
+                  label="Più recente"
+                  detail={`Anno ${highlights.newest.year}`}
+                  color="#b39ddb"
+                />
+              </Grid>
+            )}
+          </Grid>
+        </Box>
+      )}
+
+      {/* Latest Campers */}
+      {stats.latestCampers.length > 0 && (
+        <Box>
+          <Typography variant="h6" sx={{ mb: 2 }}>Ultimi aggiunti</Typography>
+          <Grid container spacing={2}>
+            {stats.latestCampers.slice(0, 6).map((camper) => (
+              <Grid key={camper.id} size={{ xs: 12, sm: 6, md: 4 }}>
+                <Card component={motion.div} whileHover={{ y: -3 }} sx={{ height: '100%' }}>
+                  <CardActionArea component={Link} to={`/campers/${camper.id}`}>
+                    {camper.coverImageUrl && (
+                      <Box
+                        component="img"
+                        src={camper.coverImageUrl}
+                        alt={`${camper.brand} ${camper.model}`}
+                        sx={{ height: 140, objectFit: 'cover', width: '100%', borderTopLeftRadius: 18, borderTopRightRadius: 18 }}
+                      />
+                    )}
+                    <CardContent sx={{ pb: '12px !important' }}>
+                      <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                        {camper.brand} {camper.model}
+                      </Typography>
+                      <Stack direction="row" spacing={1} sx={{ mt: 0.5, flexWrap: 'wrap' }}>
+                        {camper.askingPrice && (
+                          <Chip label={`€ ${camper.askingPrice.toLocaleString('it-IT')}`} size="small" sx={{ fontWeight: 600, bgcolor: 'rgba(123,174,127,.15)', color: '#7BAE7F' }} />
+                        )}
+                        {camper.year && (
+                          <Chip label={camper.year} size="small" variant="outlined" sx={{ fontWeight: 600 }} />
+                        )}
+                        {camper.mileageKm && (
+                          <Chip label={`${(camper.mileageKm / 1000).toFixed(0)}k km`} size="small" variant="outlined" sx={{ fontWeight: 600 }} />
+                        )}
                       </Stack>
-                    )
-                  })}
-                </Stack>
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid size={{ xs: 12, lg: 4 }}>
-          <Card sx={{ height: '100%' }}>
-            <CardContent>
-              <Typography variant="h6">Fasce di prezzo</Typography>
-              <Typography color="text.secondary" variant="body2">Come si distribuisce il budget.</Typography>
-              <Box sx={{ height: 260, mt: 2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {data.priceDistribution.length > 0 ? (
-                  <ResponsiveContainer>
-                    <PieChart>
-                      <Pie data={data.priceDistribution} dataKey="value" nameKey="label" cx="50%" cy="50%" outerRadius={90} innerRadius={50} paddingAngle={3} strokeWidth={0}>
-                        {data.priceDistribution.map((_, index) => (
-                          <Cell key={index} fill={PIE_COLORS[index % PIE_COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip contentStyle={{ background: '#172225', border: '1px solid rgba(123,174,127,.28)', borderRadius: 12, color: '#F8F7F4' }} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <Typography color="text.secondary" variant="body2">Nessun dato disponibile</Typography>
-                )}
-              </Box>
-              <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1, justifyContent: 'center' }}>
-                {data.priceDistribution.map((point, index) => (
-                  <Chip
-                    key={point.label}
-                    label={`${point.label} (${point.value})`}
-                    size="small"
-                    sx={{ bgcolor: `${PIE_COLORS[index % PIE_COLORS.length]}22`, color: PIE_COLORS[index % PIE_COLORS.length], fontWeight: 600 }}
-                  />
-                ))}
-              </Stack>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
+                      {camper.isFavorite && (
+                        <FavoriteIcon sx={{ color: '#ff6b5f', fontSize: 16, mt: 1 }} />
+                      )}
+                    </CardContent>
+                  </CardActionArea>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
+      )}
 
       {/* Map */}
       <Card>
@@ -187,52 +271,10 @@ export function DashboardPage() {
           </Stack>
           <Typography color="text.secondary" variant="body2">Posizione dei camper che stai monitorando sulla mappa.</Typography>
           <Box sx={{ height: { xs: 300, sm: 400 }, mt: 3, borderRadius: 3, overflow: 'hidden' }}>
-            <CamperMap locations={data.camperLocations} />
+            <CamperMap locations={stats.camperLocations} />
           </Box>
         </CardContent>
       </Card>
-
-      {/* Latest Campers */}
-      {data.latestCampers.length > 0 && (
-        <Box>
-          <Typography variant="h6" sx={{ mb: 2 }}>Ultimi aggiunti</Typography>
-          <Grid container spacing={2}>
-            {data.latestCampers.slice(0, 6).map((camper) => (
-              <Grid key={camper.id} size={{ xs: 12, sm: 6, md: 4 }}>
-                <Card component={motion.div} whileHover={{ y: -3 }} sx={{ height: '100%' }}>
-                  {camper.coverImageUrl && (
-                    <Box
-                      component="img"
-                      src={camper.coverImageUrl}
-                      alt={`${camper.brand} ${camper.model}`}
-                      sx={{ height: 140, objectFit: 'cover', width: '100%', borderTopLeftRadius: 18, borderTopRightRadius: 18 }}
-                    />
-                  )}
-                  <CardContent sx={{ pb: '12px !important' }}>
-                    <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                      {camper.brand} {camper.model}
-                    </Typography>
-                    <Stack direction="row" spacing={1} sx={{ mt: 0.5, flexWrap: 'wrap' }}>
-                      {camper.askingPrice && (
-                        <Chip label={`€ ${camper.askingPrice.toLocaleString('it-IT')}`} size="small" sx={{ fontWeight: 600, bgcolor: 'rgba(123,174,127,.15)', color: '#7BAE7F' }} />
-                      )}
-                      {camper.year && (
-                        <Chip label={camper.year} size="small" variant="outlined" sx={{ fontWeight: 600 }} />
-                      )}
-                      {camper.mileageKm && (
-                        <Chip label={`${(camper.mileageKm / 1000).toFixed(0)}k km`} size="small" variant="outlined" sx={{ fontWeight: 600 }} />
-                      )}
-                    </Stack>
-                    {camper.isFavorite && (
-                      <FavoriteIcon sx={{ color: '#ff6b5f', fontSize: 16, mt: 1 }} />
-                    )}
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
-        </Box>
-      )}
     </Stack>
   )
 }

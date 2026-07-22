@@ -1,9 +1,13 @@
 import DirectionsBusIcon from '@mui/icons-material/DirectionsBus'
 import EmojiEventsOutlinedIcon from '@mui/icons-material/EmojiEventsOutlined'
+import EventAvailableOutlinedIcon from '@mui/icons-material/EventAvailableOutlined'
+import FactCheckOutlinedIcon from '@mui/icons-material/FactCheckOutlined'
 import FavoriteIcon from '@mui/icons-material/Favorite'
 import MapOutlinedIcon from '@mui/icons-material/MapOutlined'
+import ReportProblemOutlinedIcon from '@mui/icons-material/ReportProblemOutlined'
 import RouteOutlinedIcon from '@mui/icons-material/RouteOutlined'
 import StarOutlinedIcon from '@mui/icons-material/StarOutlined'
+import TaskAltOutlinedIcon from '@mui/icons-material/TaskAltOutlined'
 import TrendingDownOutlinedIcon from '@mui/icons-material/TrendingDownOutlined'
 import { Avatar, Box, Card, CardActionArea, CardContent, Chip, Grid, Stack, Typography } from '@mui/material'
 import { useQuery } from '@tanstack/react-query'
@@ -12,7 +16,7 @@ import { Link } from 'react-router-dom'
 import { getCampers, getDashboardStats } from '../api/campers'
 import { CamperMap } from '../components/CamperMap'
 import { VanWiseMark } from '../components/VanWiseMark'
-import type { CamperLocation, CamperSummary } from '../types/camper'
+import type { CamperLocation, CamperSummary, InspectedCamper } from '../types/camper'
 
 const fallbackStats = {
   totalCampers: 0,
@@ -24,6 +28,131 @@ const fallbackStats = {
   regionDistribution: [],
   camperLocations: [] as CamperLocation[],
   latestCampers: [] as CamperSummary[],
+  inspectedCampers: [] as InspectedCamper[],
+}
+
+function daysAgoLabel(dateStr: string) {
+  const visit = new Date(dateStr)
+  const today = new Date()
+  const startOfVisit = Date.UTC(visit.getFullYear(), visit.getMonth(), visit.getDate())
+  const startOfToday = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate())
+  const days = Math.round((startOfToday - startOfVisit) / 86_400_000)
+  if (days <= 0) return 'visionato oggi'
+  if (days === 1) return 'visionato ieri'
+  if (days < 30) return `visionato ${days} giorni fa`
+  const months = Math.round(days / 30)
+  return months === 1 ? 'visionato 1 mese fa' : `visionato ${months} mesi fa`
+}
+
+type Verdict = { label: string; color: string; icon: React.ReactElement }
+
+function verdictFor(camper: InspectedCamper): Verdict {
+  if (camper.problemCount > 0) {
+    return { label: `${camper.problemCount} ${camper.problemCount === 1 ? 'criticità' : 'criticità'}`, color: '#ff6b5f', icon: <ReportProblemOutlinedIcon sx={{ fontSize: 16 }} /> }
+  }
+  if (camper.toVerifyCount > 0) {
+    return { label: `${camper.toVerifyCount} da verificare`, color: '#E9A03B', icon: <FactCheckOutlinedIcon sx={{ fontSize: 16 }} /> }
+  }
+  return { label: 'Nessun problema', color: '#7BAE7F', icon: <TaskAltOutlinedIcon sx={{ fontSize: 16 }} /> }
+}
+
+function HealthBar({ camper }: { camper: InspectedCamper }) {
+  const total = camper.totalItems || 1
+  const segments = [
+    { value: camper.okCount, color: '#7BAE7F' },
+    { value: camper.toVerifyCount, color: '#E9A03B' },
+    { value: camper.problemCount, color: '#ff6b5f' },
+  ]
+  return (
+    <Box sx={{ borderRadius: 999, display: 'flex', height: 8, overflow: 'hidden', bgcolor: 'rgba(255,255,255,.08)', width: '100%' }}>
+      {segments.map((segment, index) => segment.value > 0 && (
+        <Box key={index} sx={{ bgcolor: segment.color, width: `${(segment.value / total) * 100}%` }} />
+      ))}
+    </Box>
+  )
+}
+
+function InspectedCamperCard({ camper }: { camper: InspectedCamper }) {
+  const verdict = verdictFor(camper)
+  const readiness = camper.totalItems === 0 ? 0 : Math.round((camper.okCount / camper.totalItems) * 100)
+
+  return (
+    <Card component={motion.div} whileHover={{ y: -3 }} sx={{ height: '100%', position: 'relative' }}>
+      <CardActionArea component={Link} to={`/campers/${camper.id}`} sx={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'stretch' }}>
+        <Box sx={{ position: 'relative' }}>
+          {camper.coverImageUrl ? (
+            <Box component="img" src={camper.coverImageUrl} alt={`${camper.brand} ${camper.model}`} sx={{ height: 130, objectFit: 'cover', width: '100%', borderTopLeftRadius: 18, borderTopRightRadius: 18 }} />
+          ) : (
+            <Box sx={{ alignItems: 'center', bgcolor: 'rgba(91,164,207,.12)', borderTopLeftRadius: 18, borderTopRightRadius: 18, display: 'flex', height: 130, justifyContent: 'center' }}>
+              <DirectionsBusIcon sx={{ color: '#5BA4CF', fontSize: 40, opacity: 0.6 }} />
+            </Box>
+          )}
+          <Chip
+            size="small"
+            icon={verdict.icon}
+            label={verdict.label}
+            sx={{ position: 'absolute', top: 10, left: 10, fontWeight: 700, bgcolor: `${verdict.color}`, color: '#0d1117', '& .MuiChip-icon': { color: '#0d1117' } }}
+          />
+          {camper.isFavorite && (
+            <Avatar sx={{ position: 'absolute', top: 10, right: 10, bgcolor: 'rgba(13,17,23,.7)', height: 28, width: 28 }}>
+              <FavoriteIcon sx={{ color: '#ff6b5f', fontSize: 16 }} />
+            </Avatar>
+          )}
+        </Box>
+        <CardContent sx={{ flexGrow: 1, width: '100%' }}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.3 }}>
+            {camper.brand} {camper.model}
+          </Typography>
+          <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center', color: 'text.secondary', mt: 0.25 }}>
+            <EventAvailableOutlinedIcon sx={{ fontSize: 15 }} />
+            <Typography variant="caption">
+              {daysAgoLabel(camper.lastVisitDate)}
+              {camper.visitCount > 1 && ` · ${camper.visitCount} visite`}
+            </Typography>
+          </Stack>
+
+          <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'wrap', gap: 0.5, mt: 1.25 }}>
+            {camper.askingPrice != null && (
+              <Chip size="small" label={`€ ${camper.askingPrice.toLocaleString('it-IT')}`} sx={{ fontWeight: 600, bgcolor: 'rgba(123,174,127,.15)', color: '#7BAE7F' }} />
+            )}
+            {camper.year != null && <Chip size="small" variant="outlined" label={camper.year} sx={{ fontWeight: 600 }} />}
+            {camper.mileageKm != null && <Chip size="small" variant="outlined" label={`${(camper.mileageKm / 1000).toFixed(0)}k km`} sx={{ fontWeight: 600 }} />}
+            {camper.region && <Chip size="small" variant="outlined" label={camper.region} sx={{ fontWeight: 600 }} />}
+          </Stack>
+
+          <Box sx={{ mt: 1.75 }}>
+            <Stack direction="row" sx={{ justifyContent: 'space-between', mb: 0.5 }}>
+              <Typography variant="caption" color="text.secondary">Stato controlli</Typography>
+              <Typography variant="caption" sx={{ color: '#7BAE7F', fontWeight: 700 }}>{readiness}% OK</Typography>
+            </Stack>
+            <HealthBar camper={camper} />
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+              {camper.okCount} OK · {camper.toVerifyCount} da verificare · {camper.problemCount} problemi
+            </Typography>
+          </Box>
+
+          {camper.problemHighlights.length > 0 && (
+            <Box sx={{ mt: 1.5, borderRadius: 2, bgcolor: 'rgba(255,107,95,.1)', p: 1 }}>
+              <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center', mb: 0.5 }}>
+                <ReportProblemOutlinedIcon sx={{ color: '#ff6b5f', fontSize: 15 }} />
+                <Typography variant="caption" sx={{ color: '#ff6b5f', fontWeight: 700 }}>Da valutare prima di comprare</Typography>
+              </Stack>
+              <Stack component="ul" sx={{ listStyle: 'none', m: 0, pl: 0 }}>
+                {camper.problemHighlights.slice(0, 3).map((problem, index) => (
+                  <Typography key={index} component="li" variant="caption" color="text.secondary" sx={{ display: 'flex', gap: 0.5 }}>
+                    <span style={{ color: '#ff6b5f' }}>•</span> {problem}
+                  </Typography>
+                ))}
+                {camper.problemHighlights.length > 3 && (
+                  <Typography component="li" variant="caption" color="text.secondary">+ altri {camper.problemHighlights.length - 3}</Typography>
+                )}
+              </Stack>
+            </Box>
+          )}
+        </CardContent>
+      </CardActionArea>
+    </Card>
+  )
 }
 
 function computeHighlights(campers: CamperSummary[]) {
@@ -214,6 +343,67 @@ export function DashboardPage() {
                 />
               </Grid>
             )}
+          </Grid>
+        </Box>
+      )}
+
+      {/* Inspected campers — camper visionati */}
+      {stats.inspectedCampers.length > 0 && (
+        <Box>
+          <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center', mb: 0.5, flexWrap: 'wrap' }}>
+            <FactCheckOutlinedIcon sx={{ color: '#7BAE7F' }} />
+            <Typography variant="h6">Camper visionati</Typography>
+            <Chip size="small" label={`${stats.inspectedCampers.length} con checklist`} sx={{ fontWeight: 600, bgcolor: 'rgba(123,174,127,.15)', color: '#7BAE7F' }} />
+            {(() => {
+              const withProblems = stats.inspectedCampers.filter((c) => c.problemCount > 0).length
+              const ready = stats.inspectedCampers.filter((c) => c.problemCount === 0 && c.toVerifyCount === 0).length
+              return (
+                <>
+                  {ready > 0 && <Chip size="small" icon={<TaskAltOutlinedIcon sx={{ fontSize: 15 }} />} label={`${ready} senza problemi`} variant="outlined" sx={{ fontWeight: 600, borderColor: '#7BAE7F', color: '#7BAE7F' }} />}
+                  {withProblems > 0 && <Chip size="small" icon={<ReportProblemOutlinedIcon sx={{ fontSize: 15 }} />} label={`${withProblems} con criticità`} variant="outlined" sx={{ fontWeight: 600, borderColor: '#ff6b5f', color: '#ff6b5f' }} />}
+                </>
+              )
+            })()}
+          </Stack>
+          <Typography color="text.secondary" variant="body2" sx={{ mb: 2 }}>
+            Panoramica dei camper che hai già ispezionato, con esito dei controlli e criticità emerse.
+          </Typography>
+          {(() => {
+            const bestPick = stats.inspectedCampers
+              .filter((c) => c.problemCount === 0 && c.toVerifyCount === 0 && c.askingPrice != null)
+              .sort((a, b) => a.askingPrice! - b.askingPrice!)[0]
+            return bestPick ? (
+              <Card sx={{ mb: 2, bgcolor: 'rgba(123,174,127,.1)', border: '1px solid rgba(123,174,127,.35)' }}>
+                <CardActionArea component={Link} to={`/campers/${bestPick.id}`}>
+                  <CardContent sx={{ py: '12px !important' }}>
+                    <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
+                      <Avatar sx={{ bgcolor: 'rgba(123,174,127,.25)', color: '#7BAE7F' }}><EmojiEventsOutlinedIcon /></Avatar>
+                      <Box sx={{ minWidth: 0 }}>
+                        <Typography variant="caption" sx={{ color: '#7BAE7F', fontWeight: 700, letterSpacing: '.12em' }}>MIGLIOR VISIONATO</Typography>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                          {bestPick.brand} {bestPick.model}
+                          {bestPick.askingPrice != null && (
+                            <Typography component="span" sx={{ color: '#7BAE7F', fontWeight: 700, ml: 1 }}>
+                              € {bestPick.askingPrice.toLocaleString('it-IT')}
+                            </Typography>
+                          )}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Tutti i controlli superati, nessuna criticità · {daysAgoLabel(bestPick.lastVisitDate)}
+                        </Typography>
+                      </Box>
+                    </Stack>
+                  </CardContent>
+                </CardActionArea>
+              </Card>
+            ) : null
+          })()}
+          <Grid container spacing={2}>
+            {stats.inspectedCampers.map((camper) => (
+              <Grid key={camper.id} size={{ xs: 12, sm: 6, md: 4 }}>
+                <InspectedCamperCard camper={camper} />
+              </Grid>
+            ))}
           </Grid>
         </Box>
       )}

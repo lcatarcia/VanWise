@@ -104,6 +104,31 @@ export interface CamperLocation {
   model: string
   latitude: number
   longitude: number
+  isInspected: boolean
+  visitCount: number
+  problemCount: number
+  lastVisitDate: string | null
+}
+
+export interface InspectedCamper {
+  id: string
+  brand: string
+  model: string
+  year: number | null
+  askingPrice: number | null
+  mileageKm: number | null
+  lengthMeters: number | null
+  region: string
+  city: string
+  isFavorite: boolean
+  coverImageUrl?: string | null
+  visitCount: number
+  lastVisitDate: string
+  okCount: number
+  toVerifyCount: number
+  problemCount: number
+  totalItems: number
+  problemHighlights: string[]
 }
 
 export interface DashboardStats {
@@ -116,4 +141,5 @@ export interface DashboardStats {
   regionDistribution: DistributionPoint[]
   camperLocations: CamperLocation[]
   latestCampers: CamperSummary[]
+  inspectedCampers: InspectedCamper[]
 }

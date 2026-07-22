@@ -77,6 +77,7 @@ export function ChecklistPage() {
   const campersQuery = useQuery({ queryKey: ['campers'], queryFn: getCampers, retry: false })
   const [selectedCamperId, setSelectedCamperId] = useState('')
   const [selectedChecklistId, setSelectedChecklistId] = useState('')
+  const [initializedCamperId, setInitializedCamperId] = useState<string | null>(null)
   const [visitDate, setVisitDate] = useState(todayInputValue())
   const [items, setItems] = useState<ChecklistDraftItem[]>(createTemplateItems)
   const checklistsQuery = useQuery({
@@ -113,6 +114,23 @@ export function ChecklistPage() {
     setVisitDate(toInputDate(selectedChecklist.visitDate))
     setItems(mapChecklistToDraft(selectedChecklist))
   }, [selectedChecklist])
+
+  useEffect(() => {
+    if (selectedCamperId.length === 0 || !checklistsQuery.isSuccess) {
+      return
+    }
+
+    if (initializedCamperId === selectedCamperId) {
+      return
+    }
+
+    setInitializedCamperId(selectedCamperId)
+
+    const savedChecklists = checklistsQuery.data
+    if (savedChecklists.length > 0) {
+      setSelectedChecklistId(savedChecklists[0].id)
+    }
+  }, [selectedCamperId, initializedCamperId, checklistsQuery.isSuccess, checklistsQuery.data])
 
   function startNewChecklist() {
     setSelectedChecklistId('')
@@ -166,7 +184,10 @@ export function ChecklistPage() {
                   value={selectedCamperId}
                   onChange={(event) => {
                     setSelectedCamperId(event.target.value)
-                    startNewChecklist()
+                    setSelectedChecklistId('')
+                    setVisitDate(todayInputValue())
+                    setItems(createTemplateItems())
+                    setInitializedCamperId(null)
                   }}
                 >
                   <MenuItem value="">Seleziona camper</MenuItem>

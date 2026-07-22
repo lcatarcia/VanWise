@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using VanWise.Application.Abstractions;
 using VanWise.Application.Campers;
 using VanWise.Domain.Campers;
+using VanWise.Domain.Visits;
 
 namespace VanWise.Persistence.Repositories;
 
@@ -115,6 +116,9 @@ public sealed class CamperRepository(VanWiseDbContext dbContext) : ICamperReposi
             ? await campersWithMileage.AverageAsync(camper => camper.MileageKm, cancellationToken) ?? 0
             : 0;
 
+        var inspectedCampers = await GetInspectedCampers(cancellationToken);
+        var inspectionByCamper = inspectedCampers.ToDictionary(camper => camper.Id);
+
         return new DashboardStatsDto(
             total,
             favorites,
@@ -123,8 +127,9 @@ public sealed class CamperRepository(VanWiseDbContext dbContext) : ICamperReposi
             await GetBrandDistribution(cancellationToken),
             await GetPriceDistribution(cancellationToken),
             await GetRegionDistribution(cancellationToken),
-            await GetCamperLocations(cancellationToken),
-            await ListAsync(new CamperFilterRequest(null, null, null, null, null, null, null, null, null, null, null), cancellationToken));
+            await GetCamperLocations(inspectionByCamper, cancellationToken),
+            await ListAsync(new CamperFilterRequest(null, null, null, null, null, null, null, null, null, null, null), cancellationToken),
+            inspectedCampers);
     }
 
     public void Add(Camper camper)
@@ -236,17 +241,119 @@ public sealed class CamperRepository(VanWiseDbContext dbContext) : ICamperReposi
             .ToList();
     }
 
-    private async Task<IReadOnlyCollection<CamperLocationDto>> GetCamperLocations(CancellationToken cancellationToken)
+    private async Task<IReadOnlyCollection<CamperLocationDto>> GetCamperLocations(
+        IReadOnlyDictionary<Guid, InspectedCamperDto> inspectionByCamper,
+        CancellationToken cancellationToken)
     {
-        return await dbContext.Campers
+        var locations = await dbContext.Campers
             .AsNoTracking()
             .Where(camper => camper.Latitude != null && camper.Longitude != null)
-            .Select(camper => new CamperLocationDto(
+            .Select(camper => new
+            {
                 camper.Id,
                 camper.Brand,
                 camper.Model,
-                camper.Latitude!.Value,
-                camper.Longitude!.Value))
+                Latitude = camper.Latitude!.Value,
+                Longitude = camper.Longitude!.Value,
+            })
             .ToListAsync(cancellationToken);
+
+        return locations
+            .Select(location =>
+            {
+                inspectionByCamper.TryGetValue(location.Id, out var inspection);
+                return new CamperLocationDto(
+                    location.Id,
+                    location.Brand,
+                    location.Model,
+                    location.Latitude,
+                    location.Longitude,
+                    inspection is not null,
+                    inspection?.VisitCount ?? 0,
+                    inspection?.ProblemCount ?? 0,
+                    inspection?.LastVisitDate);
+            })
+            .ToList();
+    }
+
+    private async Task<IReadOnlyCollection<InspectedCamperDto>> GetInspectedCampers(CancellationToken cancellationToken)
+    {
+        var checklists = await dbContext.VisitChecklists
+            .AsNoTracking()
+            .Select(checklist => new
+            {
+                checklist.CamperId,
+                checklist.VisitDate,
+                Items = checklist.Items
+                    .Select(item => new { item.Status, item.Description })
+                    .ToList(),
+            })
+            .ToListAsync(cancellationToken);
+
+        if (checklists.Count == 0)
+        {
+            return [];
+        }
+
+        var camperIds = checklists.Select(checklist => checklist.CamperId).Distinct().ToList();
+
+        var campers = await dbContext.Campers
+            .AsNoTracking()
+            .Where(camper => camperIds.Contains(camper.Id))
+            .Select(camper => new
+            {
+                camper.Id,
+                camper.Brand,
+                camper.Model,
+                camper.Year,
+                camper.AskingPrice,
+                camper.MileageKm,
+                camper.LengthMeters,
+                camper.Region,
+                camper.City,
+                camper.IsFavorite,
+                CoverImageUrl = camper.Attachments
+                    .Where(attachment => attachment.IsPhoto)
+                    .OrderBy(attachment => attachment.SortOrder)
+                    .Select(attachment => attachment.StoragePath)
+                    .FirstOrDefault(),
+            })
+            .ToListAsync(cancellationToken);
+
+        return campers
+            .Select(camper =>
+            {
+                var camperChecklists = checklists.Where(checklist => checklist.CamperId == camper.Id).ToList();
+                var latest = camperChecklists
+                    .OrderByDescending(checklist => checklist.VisitDate)
+                    .First();
+                var items = latest.Items;
+
+                return new InspectedCamperDto(
+                    camper.Id,
+                    camper.Brand,
+                    camper.Model,
+                    camper.Year,
+                    camper.AskingPrice,
+                    camper.MileageKm,
+                    camper.LengthMeters,
+                    camper.Region,
+                    camper.City,
+                    camper.IsFavorite,
+                    camper.CoverImageUrl,
+                    camperChecklists.Count,
+                    latest.VisitDate,
+                    items.Count(item => item.Status == ChecklistItemStatus.Ok),
+                    items.Count(item => item.Status == ChecklistItemStatus.ToVerify),
+                    items.Count(item => item.Status == ChecklistItemStatus.Problem),
+                    items.Count,
+                    items
+                        .Where(item => item.Status == ChecklistItemStatus.Problem)
+                        .Select(item => item.Description)
+                        .Where(description => description.Length > 0)
+                        .ToList());
+            })
+            .OrderByDescending(camper => camper.LastVisitDate)
+            .ToList();
     }
 }
